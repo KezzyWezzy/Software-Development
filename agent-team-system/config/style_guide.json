@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Code Style Guide Configuration",
+  "description": "Defines coding standards and conventions for the agent team system",
+
+  "naming_conventions": {
+    "classes": "PascalCase",
+    "functions": "snake_case",
+    "methods": "snake_case",
+    "variables": "snake_case",
+    "constants": "UPPER_SNAKE_CASE",
+    "private_members": "_leading_underscore",
+    "protected_members": "_leading_underscore"
+  },
+
+  "formatting": {
+    "indentation": "4 spaces",
+    "max_line_length": 100,
+    "blank_lines_after_class": 2,
+    "blank_lines_after_function": 2,
+    "quotes": "double"
+  },
+
+  "documentation": {
+    "docstring_style": "google",
+    "require_docstrings": {
+      "modules": true,
+      "classes": true,
+      "functions": true,
+      "methods": true
+    },
+    "docstring_sections": [
+      "Args",
+      "Returns",
+      "Raises",
+      "Example",
+      "Note"
+    ]
+  },
+
+  "imports": {
+    "order": [
+      "standard_library",
+      "third_party",
+      "local"
+    ],
+    "group_by_package": true,
+    "alphabetize_within_groups": true,
+    "blank_lines_between_groups": 1
+  },
+
+  "code_organization": {
+    "max_function_length": 50,
+    "max_class_length": 500,
+    "max_file_length": 1000,
+    "max_complexity": 10
+  },
+
+  "language_specific": {
+    "python": {
+      "version": "3.9+",
+      "type_hints": "required",
+      "formatting_tool": "black",
+      "linting_tool": "flake8",
+      "max_line_length": 100,
+      "string_quotes": "double"
+    },
+    "javascript": {
+      "version": "ES6+",
+      "formatting_tool": "prettier",
+      "linting_tool": "eslint",
+      "semicolons": true,
+      "trailing_commas": "es5",
+      "arrow_parens": "always"
+    },
+    "typescript": {
+      "version": "4.5+",
+      "strict_mode": true,
+      "no_implicit_any": true,
+      "formatting_tool": "prettier",
+      "linting_tool": "eslint"
+    },
+    "c": {
+      "standard": "C11",
+      "indentation": "4 spaces",
+      "brace_style": "K&R",
+      "pointer_alignment": "left"
+    },
+    "cpp": {
+      "standard": "C++17",
+      "formatting_tool": "clang-format",
+      "naming_style": "camelCase_for_methods"
+    }
+  },
+
+  "domain_specific": {
+    "industrial": {
+      "naming_prefix": {
+        "plc_variables": "plc_",
+        "scada_tags": "tag_",
+        "alarm_codes": "ALM_"
+      },
+      "comment_requirements": {
+        "hardware_interfaces": "required",
+        "protocol_handlers": "required",
+        "safety_critical": "extensive"
+      }
+    },
+    "business": {
+      "naming_conventions": {
+        "database_tables": "snake_case",
+        "api_endpoints": "kebab-case",
+        "business_logic": "verbose_names"
+      }
+    },
+    "engineering": {
+      "units": "always_specify",
+      "formulas": "include_reference",
+      "calculations": "show_steps"
+    }
+  },
+
+  "best_practices": {
+    "avoid_magic_numbers": true,
+    "use_constants_for_config": true,
+    "error_handling": "explicit",
+    "logging_level": "INFO",
+    "defensive_programming": true
+  },
+
+  "comments": {
+    "todo_format": "TODO(<author>): <description>",
+    "fixme_format": "FIXME(<author>): <description>",
+    "note_format": "NOTE: <description>",
+    "require_explanation_for_complex_logic": true
+  },
+
+  "version_control": {
+    "commit_message_format": "<type>(<scope>): <description>",
+    "commit_types": [
+      "feat",
+      "fix",
+      "docs",
+      "style",
+      "refactor",
+      "test",
+      "chore"
+    ],
+    "branch_naming": "<type>/<description>",
+    "require_issue_reference": false
+  },
+
+  "security": {
+    "no_hardcoded_secrets": true,
+    "validate_all_inputs": true,
+    "sanitize_user_data": true,
+    "use_parameterized_queries": true
+  }
+}

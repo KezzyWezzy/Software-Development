@@ -1,0 +1,335 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Reusable Components Registry",
+  "description": "Registry of pre-built components that agents should reuse instead of rebuilding",
+  "version": "1.0.0",
+
+  "ui_components": {
+    "description": "Pre-built UI components following the project style guide",
+    "framework": "React/Vue/Angular compatible",
+    "components": {
+      "data_table": {
+        "path": "components/ui/DataTable",
+        "description": "Advanced data table with sorting, filtering, pagination",
+        "features": ["sorting", "filtering", "pagination", "export", "row_selection"],
+        "props": ["data", "columns", "onRowClick", "selectable"],
+        "documentation": "docs/components/DataTable.md"
+      },
+      "chart": {
+        "path": "components/ui/Chart",
+        "description": "Multi-type chart component (line, bar, pie, scatter)",
+        "features": ["real_time", "zoom", "export", "multiple_series"],
+        "props": ["type", "data", "options"],
+        "documentation": "docs/components/Chart.md"
+      },
+      "form": {
+        "path": "components/ui/Form",
+        "description": "Form builder with validation",
+        "features": ["validation", "auto_save", "field_groups", "conditional_fields"],
+        "props": ["schema", "onSubmit", "initialValues"],
+        "documentation": "docs/components/Form.md"
+      },
+      "modal": {
+        "path": "components/ui/Modal",
+        "description": "Modal dialog with customizable actions",
+        "features": ["draggable", "resizable", "stacking"],
+        "props": ["title", "content", "actions", "size"],
+        "documentation": "docs/components/Modal.md"
+      },
+      "notification": {
+        "path": "components/ui/Notification",
+        "description": "Toast notifications system",
+        "features": ["queue", "auto_dismiss", "actions"],
+        "props": ["type", "message", "duration"],
+        "documentation": "docs/components/Notification.md"
+      },
+      "dashboard_widget": {
+        "path": "components/ui/DashboardWidget",
+        "description": "Reusable dashboard widget container",
+        "features": ["draggable", "resizable", "collapsible", "refresh"],
+        "props": ["title", "content", "actions"],
+        "documentation": "docs/components/DashboardWidget.md"
+      }
+    }
+  },
+
+  "backend_modules": {
+    "description": "Pre-built backend modules and services",
+    "language": "Python/Node.js",
+    "modules": {
+      "authentication": {
+        "path": "modules/auth",
+        "description": "Complete authentication system with JWT/OAuth2",
+        "features": ["jwt", "oauth2", "rbac", "session_management"],
+        "functions": ["login", "logout", "refresh_token", "check_permission"],
+        "documentation": "docs/modules/authentication.md"
+      },
+      "logging": {
+        "path": "modules/logging",
+        "description": "Structured logging with multiple backends",
+        "features": ["json_logs", "log_rotation", "remote_logging"],
+        "functions": ["log", "get_logger", "configure"],
+        "documentation": "docs/modules/logging.md"
+      },
+      "database": {
+        "path": "modules/database",
+        "description": "Database connection and ORM utilities",
+        "features": ["connection_pooling", "migrations", "transactions"],
+        "functions": ["connect", "query", "migrate", "transaction"],
+        "documentation": "docs/modules/database.md"
+      },
+      "cache": {
+        "path": "modules/cache",
+        "description": "Caching layer with Redis/Memcached support",
+        "features": ["ttl", "invalidation", "namespaces"],
+        "functions": ["get", "set", "delete", "clear"],
+        "documentation": "docs/modules/cache.md"
+      },
+      "email": {
+        "path": "modules/email",
+        "description": "Email sending with templates",
+        "features": ["templates", "attachments", "queue"],
+        "functions": ["send", "send_template", "queue_email"],
+        "documentation": "docs/modules/email.md"
+      },
+      "file_storage": {
+        "path": "modules/storage",
+        "description": "File storage abstraction (local/S3/Azure)",
+        "features": ["multiple_backends", "streaming", "signed_urls"],
+        "functions": ["upload", "download", "delete", "get_url"],
+        "documentation": "docs/modules/storage.md"
+      }
+    }
+  },
+
+  "communication_drivers": {
+    "description": "Industrial communication protocol drivers",
+    "language": "Python/C/C++",
+    "protocols": {
+      "modbus_tcp": {
+        "path": "drivers/modbus/modbus_tcp",
+        "description": "Modbus TCP/IP driver",
+        "features": ["master", "slave", "async", "reconnect"],
+        "functions": ["read_coils", "write_coils", "read_registers", "write_registers"],
+        "documentation": "docs/drivers/modbus_tcp.md"
+      },
+      "modbus_rtu": {
+        "path": "drivers/modbus/modbus_rtu",
+        "description": "Modbus RTU serial driver",
+        "features": ["rs232", "rs485", "error_detection"],
+        "functions": ["connect_serial", "read_coils", "write_registers"],
+        "documentation": "docs/drivers/modbus_rtu.md"
+      },
+      "opcua": {
+        "path": "drivers/opcua/opcua_client",
+        "description": "OPC UA client driver",
+        "features": ["subscription", "encryption", "discovery"],
+        "functions": ["connect", "read_node", "write_node", "subscribe"],
+        "documentation": "docs/drivers/opcua.md"
+      },
+      "serial": {
+        "path": "drivers/serial/serial_driver",
+        "description": "Generic serial communication driver",
+        "features": ["rs232", "rs485", "configurable_protocol"],
+        "functions": ["open", "read", "write", "close"],
+        "documentation": "docs/drivers/serial.md"
+      },
+      "ethernet_ip": {
+        "path": "drivers/ethernetip/eip_driver",
+        "description": "EtherNet/IP driver for Allen-Bradley PLCs",
+        "features": ["cip", "explicit_messaging", "implicit_messaging"],
+        "functions": ["read_tag", "write_tag", "list_tags"],
+        "documentation": "docs/drivers/ethernet_ip.md"
+      },
+      "profinet": {
+        "path": "drivers/profinet/profinet_driver",
+        "description": "PROFINET driver for Siemens PLCs",
+        "features": ["real_time", "tcp", "acyclic"],
+        "functions": ["connect", "read_data", "write_data"],
+        "documentation": "docs/drivers/profinet.md"
+      }
+    }
+  },
+
+  "scada_components": {
+    "description": "SCADA system components",
+    "components": {
+      "hmi_renderer": {
+        "path": "scada/hmi/renderer",
+        "description": "HMI screen renderer",
+        "features": ["svg_rendering", "animations", "interactive"],
+        "documentation": "docs/scada/hmi_renderer.md"
+      },
+      "alarm_manager": {
+        "path": "scada/alarms/manager",
+        "description": "Alarm management system",
+        "features": ["priority", "acknowledgment", "escalation", "history"],
+        "documentation": "docs/scada/alarm_manager.md"
+      },
+      "trend_viewer": {
+        "path": "scada/trends/viewer",
+        "description": "Real-time and historical trend viewer",
+        "features": ["real_time", "playback", "export"],
+        "documentation": "docs/scada/trend_viewer.md"
+      },
+      "recipe_manager": {
+        "path": "scada/recipes/manager",
+        "description": "Recipe/setpoint management",
+        "features": ["versioning", "templates", "validation"],
+        "documentation": "docs/scada/recipe_manager.md"
+      }
+    }
+  },
+
+  "business_modules": {
+    "description": "Business software components",
+    "modules": {
+      "billing_engine": {
+        "path": "business/billing/engine",
+        "description": "Billing and invoicing engine",
+        "features": ["recurring", "proration", "multi_currency", "tax_calculation"],
+        "documentation": "docs/business/billing.md"
+      },
+      "project_management": {
+        "path": "business/projects/manager",
+        "description": "Project management module",
+        "features": ["tasks", "gantt", "resources", "time_tracking"],
+        "documentation": "docs/business/projects.md"
+      },
+      "document_generator": {
+        "path": "business/documents/generator",
+        "description": "Document generation (PDF/Word/Excel)",
+        "features": ["templates", "merge_fields", "digital_signatures"],
+        "documentation": "docs/business/documents.md"
+      },
+      "bidding_system": {
+        "path": "business/bidding/system",
+        "description": "Bidding and proposal system",
+        "features": ["templates", "approval_workflow", "version_control"],
+        "documentation": "docs/business/bidding.md"
+      },
+      "reporting_engine": {
+        "path": "business/reporting/engine",
+        "description": "Report generation and scheduling",
+        "features": ["templates", "scheduling", "distribution", "caching"],
+        "documentation": "docs/business/reporting.md"
+      }
+    }
+  },
+
+  "engineering_tools": {
+    "description": "Engineering calculation and CAD integration tools",
+    "tools": {
+      "cad_interface": {
+        "path": "engineering/cad/interface",
+        "description": "CAD software integration (AutoCAD, SolidWorks, etc.)",
+        "features": ["import", "export", "automation", "batch_processing"],
+        "documentation": "docs/engineering/cad.md"
+      },
+      "calculation_engine": {
+        "path": "engineering/calculations/engine",
+        "description": "Engineering calculation engine",
+        "features": ["units", "formulas", "validation", "standards"],
+        "documentation": "docs/engineering/calculations.md"
+      },
+      "fea_interface": {
+        "path": "engineering/fea/interface",
+        "description": "Finite Element Analysis interface",
+        "features": ["meshing", "solving", "post_processing"],
+        "documentation": "docs/engineering/fea.md"
+      },
+      "piping_designer": {
+        "path": "engineering/piping/designer",
+        "description": "Piping design and analysis",
+        "features": ["isometric", "stress_analysis", "material_takeoff"],
+        "documentation": "docs/engineering/piping.md"
+      }
+    }
+  },
+
+  "maintenance_modules": {
+    "description": "Predictive maintenance and fleet management",
+    "modules": {
+      "predictive_maintenance": {
+        "path": "maintenance/predictive/engine",
+        "description": "Predictive maintenance engine with ML",
+        "features": ["anomaly_detection", "failure_prediction", "scheduling"],
+        "documentation": "docs/maintenance/predictive.md"
+      },
+      "fleet_management": {
+        "path": "maintenance/fleet/manager",
+        "description": "Equipment fleet management",
+        "features": ["tracking", "scheduling", "inventory", "work_orders"],
+        "documentation": "docs/maintenance/fleet.md"
+      },
+      "compressor_monitoring": {
+        "path": "maintenance/compressors/monitor",
+        "description": "Compressor performance monitoring",
+        "features": ["vibration_analysis", "temperature_tracking", "efficiency"],
+        "documentation": "docs/maintenance/compressors.md"
+      }
+    }
+  },
+
+  "utilities": {
+    "description": "Common utility functions and helpers",
+    "utilities": {
+      "date_time": {
+        "path": "utils/datetime",
+        "description": "Date/time utilities with timezone support",
+        "functions": ["format", "parse", "convert_timezone", "business_days"]
+      },
+      "validation": {
+        "path": "utils/validation",
+        "description": "Data validation utilities",
+        "functions": ["validate_email", "validate_phone", "validate_schema"]
+      },
+      "formatting": {
+        "path": "utils/formatting",
+        "description": "Data formatting utilities",
+        "functions": ["format_number", "format_currency", "format_units"]
+      },
+      "crypto": {
+        "path": "utils/crypto",
+        "description": "Cryptography utilities",
+        "functions": ["hash", "encrypt", "decrypt", "sign"]
+      }
+    }
+  },
+
+  "usage_guidelines": {
+    "when_to_reuse": [
+      "When the component provides the exact functionality needed",
+      "When minor customization can be done through props/config",
+      "When the component follows current style guidelines"
+    ],
+    "when_to_create_new": [
+      "When existing component requires major modifications (>30%)",
+      "When domain-specific requirements can't be met",
+      "When performance requirements are significantly different"
+    ],
+    "how_to_extend": [
+      "Inherit from existing component",
+      "Use composition over modification",
+      "Document why extension was necessary",
+      "Consider contributing back to registry"
+    ]
+  },
+
+  "contributing": {
+    "description": "How to add new components to the registry",
+    "steps": [
+      "Implement component following style guide",
+      "Write comprehensive documentation",
+      "Add tests with >80% coverage",
+      "Add entry to this registry file",
+      "Submit for review"
+    ],
+    "requirements": {
+      "documentation": "Required",
+      "tests": "Required (>80% coverage)",
+      "examples": "Required",
+      "performance_benchmarks": "Recommended"
+    }
+  }
+}

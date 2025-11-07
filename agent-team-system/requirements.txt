@@ -1,0 +1,93 @@
+# Agent Team System Requirements
+
+# Core Dependencies
+python>=3.9
+
+# Async and concurrency
+asyncio-mqtt>=0.16.0
+
+# Data handling
+pydantic>=2.0.0
+python-dateutil>=2.8.2
+
+# Logging
+structlog>=23.1.0
+colorlog>=6.7.0
+
+# File system and paths
+pathlib2>=2.3.7; python_version < '3.4'
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# Web framework (for dashboard)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+jinja2>=3.1.2
+
+# Database (optional, for persistent storage)
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# Monitoring and metrics
+prometheus-client>=0.18.0
+psutil>=5.9.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+
+# Code quality
+black>=23.10.0
+flake8>=6.1.0
+mypy>=1.6.0
+isort>=5.12.0
+pylint>=3.0.0
+
+# Documentation
+mkdocs>=1.5.0
+mkdocs-material>=9.4.0
+mkdocstrings[python]>=0.23.0
+
+# Security scanning
+bandit>=1.7.5
+safety>=2.3.5
+
+# Git operations
+gitpython>=3.1.40
+
+# HTTP client (for webhooks, API calls)
+httpx>=0.25.0
+requests>=2.31.0
+
+# Serialization
+orjson>=3.9.0
+msgpack>=1.0.7
+
+# Scheduling
+apscheduler>=3.10.4
+
+# Process management
+supervisor>=4.2.5
+
+# Optional: AI/ML capabilities
+# openai>=1.0.0
+# anthropic>=0.5.0
+# langchain>=0.1.0
+
+# Optional: Database drivers
+# psycopg2-binary>=2.9.9  # PostgreSQL
+# redis>=5.0.0            # Redis
+# pymongo>=4.5.0          # MongoDB
+
+# Optional: Cloud storage
+# boto3>=1.29.0           # AWS S3
+# azure-storage-blob>=12.19.0  # Azure
+# google-cloud-storage>=2.10.0  # GCP
+
+# Optional: Message queues
+# pika>=1.3.2             # RabbitMQ
+# kafka-python>=2.0.2     # Kafka
