@@ -149,7 +149,28 @@ agent-team-system/
 
 ## 🎯 Quick Start
 
-### Installation
+### Option 1: GUI Launcher (Easiest!) 🖱️
+
+**Windows Users:**
+```batch
+# Complete automated installation
+INSTALL.bat
+
+# Or just launch it
+LAUNCH.bat
+```
+
+**Features:**
+- ✨ **No Python knowledge required**
+- 🖥️ **Beautiful GUI interface**
+- 📦 **Standalone .exe available**
+- 🌐 **Integrated frontend launcher**
+- 📊 **Real-time monitoring**
+- 🔧 **Easy configuration**
+
+See [LAUNCHER_GUIDE.md](agent-team-system/LAUNCHER_GUIDE.md) for full GUI documentation.
+
+### Option 2: Command Line
 
 ```bash
 # Navigate to the agent team system
@@ -162,7 +183,17 @@ pip install -r requirements.txt
 python -m agent_team init
 ```
 
-### Basic Usage
+### Option 3: Build Your Own Executable
+
+```batch
+# Build standalone .exe (Windows)
+cd agent-team-system
+BUILD_EXE.bat
+
+# Result: dist/AgentTeamLauncher.exe
+```
+
+### Basic Usage (CLI)
 
 ```bash
 # Start the system (semi-autonomous mode)
@@ -482,6 +513,65 @@ python -m agent_team reminders dismiss <reminder-id>
 
 ---
 
+## 🖥️ GUI Launcher
+
+### Complete Graphical Interface
+
+The system includes a **full-featured GUI launcher** that makes it accessible to non-technical users:
+
+#### Dashboard Tab
+- **System Controls**: Start/stop with autonomy level selection
+- **Quick Actions**: Status, backup, workspace, frontend, docs, health check
+- **System Information**: Version, features, statistics
+
+#### Agents Tab
+- **Agent Management**: View all available agents
+- **Agent Details**: Status, configuration, capabilities
+- **Task Submission**: Submit and monitor tasks (CLI integration)
+- **Agent Logs**: View logs for specific agents
+
+#### Configuration Tab
+- **Workspace Settings**: Choose your workspace directory
+- **Frontend Integration**: Set frontend directory with auto-launch
+- **Preferences**: Backups, reminders, logging options
+- **Save/Load**: Persistent configuration
+
+#### Logs Tab
+- **Real-Time Viewing**: See logs as they happen
+- **Filter by Level**: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- **Color Coding**: Easy visual identification
+- **Export**: Save logs to file
+- **Search**: Find specific log entries
+
+#### Setup Tab
+- **Installation Status**: Check what's installed
+- **Install Dependencies**: One-click Python package installation
+- **Initialize System**: Set up workspace structure
+- **Frontend Setup**: Download and configure frontend
+- **Progress Tracking**: Visual feedback for long operations
+
+### Building the Executable
+
+```batch
+# Windows - Creates standalone .exe
+BUILD_EXE.bat
+
+# Result: dist/AgentTeamLauncher.exe (~50-100MB)
+# No Python installation required to run!
+```
+
+### Distribution-Ready
+
+- **Single-file executable**
+- **No dependencies needed**
+- **Works on any Windows PC**
+- **Professional installer support** (Inno Setup, NSIS)
+- **Desktop shortcut creation**
+
+See [LAUNCHER_GUIDE.md](agent-team-system/LAUNCHER_GUIDE.md) for complete documentation.
+
+---
+
 ## 🚦 Current Status
 
 ### ✅ Implemented (v1.0.0)
@@ -494,9 +584,13 @@ python -m agent_team reminders dismiss <reminder-id>
 - Reminder engine
 - Best practices library
 - Code generator agent (example)
-- Comprehensive documentation
+- Comprehensive documentation (130+ pages)
 - Configuration system (style guides, components)
 - CLI interface
+- **🆕 GUI Launcher with full-featured interface**
+- **🆕 Executable build system (PyInstaller)**
+- **🆕 Automated installation scripts**
+- **🆕 Frontend integration support**
 
 ### 🔜 Coming Soon (v1.1.0)
 
