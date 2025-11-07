@@ -1,0 +1,140 @@
+# Agent Validation Configuration Example
+# Copy this file and customize for your feature testing
+
+task_id: TASK-123
+feature: loading_bay_management
+base_url: http://localhost:3000
+
+# E2E Test Cases
+e2e_tests:
+  # Test 1: Create a new loading bay
+  - name: create_loading_bay
+    url: /loading-bays
+    interactions:
+      - action: click
+        selector: 'button:has-text("New Loading Bay")'
+      - action: type
+        selector: 'input[name="bay_number"]'
+        value: 'BAY-TEST-001'
+      - action: type
+        selector: 'input[name="capacity"]'
+        value: '50000'
+      - action: select
+        selector: 'select[name="status"]'
+        value: 'AVAILABLE'
+      - action: click
+        selector: 'button[type="submit"]'
+      - action: wait
+        selector: '.success-message'
+        timeout: 5000
+    validations:
+      - type: element_visible
+        selector: '.success-message'
+      - type: text_content
+        selector: '.success-message'
+        expected: 'created successfully'
+      - type: url_matches
+        expected: '/loading-bays'
+
+  # Test 2: Verify loading bay appears in list
+  - name: verify_loading_bay_in_list
+    url: /loading-bays
+    interactions: []
+    validations:
+      - type: element_visible
+        selector: 'table.loading-bays'
+      - type: element_count
+        selector: 'table.loading-bays tbody tr'
+        expected: 1
+      - type: text_content
+        selector: 'table.loading-bays tbody tr:first-child'
+        expected: 'BAY-TEST-001'
+
+  # Test 3: Update loading bay status
+  - name: update_loading_bay_status
+    url: /loading-bays
+    interactions:
+      - action: click
+        selector: 'table.loading-bays tbody tr:first-child button:has-text("Edit")'
+      - action: select
+        selector: 'select[name="status"]'
+        value: 'MAINTENANCE'
+      - action: click
+        selector: 'button:has-text("Save")'
+      - action: wait
+        selector: '.success-message'
+        timeout: 5000
+    validations:
+      - type: element_visible
+        selector: '.badge:has-text("MAINTENANCE")'
+      - type: text_content
+        selector: 'table.loading-bays tbody tr:first-child'
+        expected: 'MAINTENANCE'
+
+  # Test 4: Delete loading bay
+  - name: delete_loading_bay
+    url: /loading-bays
+    interactions:
+      - action: click
+        selector: 'table.loading-bays tbody tr:first-child button:has-text("Delete")'
+      - action: click
+        selector: 'button:has-text("Confirm")'
+      - action: wait
+        selector: '.success-message'
+        timeout: 5000
+    validations:
+      - type: element_count
+        selector: 'table.loading-bays tbody tr'
+        expected: 0
+
+# Log Analysis Configuration
+log_analysis:
+  # Paths to log files to analyze
+  paths:
+    - ./backend/logs/application.log
+    - ./backend/logs/error.log
+    - ./frontend/logs/console.log
+    - /var/log/nginx/error.log
+
+  # How far back to look in logs (in minutes)
+  time_window_minutes: 10
+
+# Visual Verification Configuration
+visual_verification:
+  # Screenshots to verify
+  screenshots:
+    - path: ./validation_screenshots/create_loading_bay_initial.png
+      expected_text:
+        - 'Loading Bays'
+        - 'New Loading Bay'
+      error_detection: true
+
+    - path: ./validation_screenshots/verify_loading_bay_in_list_initial.png
+      expected_text:
+        - 'Loading Bays'
+        - 'BAY-TEST-001'
+        - 'AVAILABLE'
+      error_detection: true
+
+    - path: ./validation_screenshots/update_loading_bay_status_step_2.png
+      expected_text:
+        - 'MAINTENANCE'
+      error_detection: true
+
+# Success Criteria
+success_criteria:
+  code_coverage_min: 80
+  e2e_pass_rate: 100
+  max_log_errors: 0
+  max_visual_errors: 0
+
+# Optional: Performance Thresholds
+performance:
+  max_page_load_time_seconds: 3.0
+  max_api_response_time_ms: 200
+
+# Optional: Accessibility Requirements
+accessibility:
+  enabled: true
+  max_violations: 0
+  wcag_level: AA

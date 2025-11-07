@@ -1,0 +1,50 @@
+# Agent Readiness Check Framework - Python Dependencies
+# Install with: pip install -r requirements_validation.txt
+
+# Browser Automation
+playwright==1.40.0
+pytest-playwright==0.4.3
+
+# Alternative: Selenium (if preferred)
+# selenium==4.15.2
+# webdriver-manager==4.0.1
+
+# Image Processing and OCR
+Pillow==10.1.0
+pytesseract==0.3.10
+opencv-python==4.8.1.78
+numpy==1.26.2
+
+# Configuration and Data Processing
+PyYAML==6.0.1
+
+# File watching and monitoring
+watchdog==3.0.0
+
+# Optional: Accessibility Testing
+# axe-playwright-python==0.1.3
+
+# Optional: Performance Testing
+# locust==2.17.0
+
+# Optional: API Testing
+# requests==2.31.0
+# httpx==0.25.2
+
+# Development and Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Note: You must also install Tesseract OCR separately:
+#
+# Ubuntu/Debian:
+#   sudo apt-get install tesseract-ocr
+#
+# macOS:
+#   brew install tesseract
+#
+# Windows:
+#   Download from: https://github.com/UB-Mannheim/tesseract/wiki
+#
+# After installing Python dependencies, run:
+#   playwright install
