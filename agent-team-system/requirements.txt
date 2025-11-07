@@ -91,3 +91,13 @@ supervisor>=4.2.5
 # Optional: Message queues
 # pika>=1.3.2             # RabbitMQ
 # kafka-python>=2.0.2     # Kafka
+
+# Testing & Validation (CRITICAL for production use)
+# These enable REAL testing before claiming "it's ready"
+selenium>=4.15.0         # Browser automation - ACTUALLY test the UI
+webdriver-manager>=4.0.1 # Automatic webdriver management
+playwright>=1.40.0       # Alternative browser automation
+pytesseract>=0.3.10      # OCR for screenshot verification
+Pillow>=10.1.0          # Image processing for screenshots
+pytest-selenium>=4.0.1   # Selenium pytest integration
+pytest-playwright>=0.4.3 # Playwright pytest integration
