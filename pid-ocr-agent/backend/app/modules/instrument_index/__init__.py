@@ -1,0 +1,1 @@
+"""Instrument Index Generation Module"""
