@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Plan & PAC - KJV Solutions LLC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: 8.5in 11in portrait;
+            margin: 0.5in;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: white;
+            color: #1e293b;
+            line-height: 1.6;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            max-width: 8in;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Section */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #2563EB;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+        }
+
+        .company-info h1 {
+            font-size: 18pt;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2px;
+        }
+
+        .tagline {
+            font-size: 8pt;
+            color: #10B981;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        /* Document Title */
+        .doc-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .doc-title h2 {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1e293b;
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        /* Project Information */
+        .project-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-field label {
+            font-size: 7pt;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .info-field .editable {
+            font-size: 9pt;
+            font-weight: 500;
+            color: #1e293b;
+            padding: 4px 6px;
+            border-bottom: 1px solid #cbd5e1;
+            min-height: 20px;
+        }
+
+        .monospace {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Section Headers */
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11pt;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        /* Content Areas */
+        .content-area {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            min-height: 60px;
+        }
+
+        .content-area.editable {
+            cursor: text;
+        }
+
+        .content-area.editable:hover {
+            background-color: #eff6ff;
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+        }
+
+        .content-area.editable:focus {
+            outline: 2px solid #2ecc71;
+            outline-offset: 2px;
+            background-color: #ffffff;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            color: white;
+        }
+
+        .data-table thead th {
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #1E40AF;
+        }
+
+        .data-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #eff6ff;
+        }
+
+        .data-table td {
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .data-table td.editable {
+            cursor: text;
+        }
+
+        .data-table td.editable:hover {
+            background-color: #fef3c7;
+        }
+
+        .data-table td.editable:focus {
+            outline: 2px solid #2563EB;
+            outline-offset: -2px;
+            background-color: #ffffff;
+        }
+
+        /* Checkbox cells */
+        .checkbox-cell {
+            text-align: center;
+        }
+
+        .checkbox-cell input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* Lists */
+        .item-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .item-list li {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: white;
+            border-left: 3px solid #10B981;
+            border-radius: 4px;
+        }
+
+        .item-list li.editable {
+            cursor: text;
+            border: 1px solid #e2e8f0;
+        }
+
+        .item-list li.editable:hover {
+            background-color: #eff6ff;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            font-size: 8pt;
+        }
+
+        .footer-field label {
+            display: block;
+            font-size: 7pt;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .footer-field .editable {
+            display: block;
+            width: 100%;
+            padding: 4px 6px;
+            border-bottom: 1px solid #cbd5e1;
+            min-height: 20px;
+        }
+
+        .footer-field .signature-line {
+            border-top: 1px solid #64748b;
+            margin-top: 40px;
+            padding-top: 5px;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 8pt;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-active {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-complete {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Two column layout */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media print {
+            .container {
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="circuitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#2563EB;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="20" cy="20" r="8" fill="url(#circuitGradient)"/>
+                    <circle cx="80" cy="20" r="8" fill="url(#circuitGradient)"/>
+                    <circle cx="50" cy="50" r="10" fill="url(#circuitGradient)"/>
+                    <circle cx="20" cy="80" r="8" fill="url(#circuitGradient)"/>
+                    <circle cx="80" cy="80" r="8" fill="url(#circuitGradient)"/>
+                    <line x1="20" y1="20" x2="50" y2="50" stroke="#10B981" stroke-width="3"/>
+                    <line x1="80" y1="20" x2="50" y2="50" stroke="#10B981" stroke-width="3"/>
+                    <line x1="50" y1="50" x2="20" y2="80" stroke="#10B981" stroke-width="3"/>
+                    <line x1="50" y1="50" x2="80" y2="80" stroke="#10B981" stroke-width="3"/>
+                    <circle cx="20" cy="20" r="4" fill="#10B981"/>
+                    <circle cx="80" cy="20" r="4" fill="#10B981"/>
+                    <circle cx="50" cy="50" r="5" fill="#10B981"/>
+                    <circle cx="20" cy="80" r="4" fill="#10B981"/>
+                    <circle cx="80" cy="80" r="4" fill="#10B981"/>
+                </svg>
+                <div class="company-info">
+                    <h1>KJV SOLUTIONS LLC</h1>
+                    <p class="tagline">Engineering Excellence in Industrial Automation</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Title -->
+        <div class="doc-title">
+            <h2>📋 WORK PLAN & PROJECT AUTHORIZATION</h2>
+        </div>
+
+        <!-- Project Information -->
+        <div class="project-info">
+            <div class="info-field">
+                <label>Project Name</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Project Number</label>
+                <div class="editable monospace" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Document Number</label>
+                <div class="editable monospace" contenteditable="true">WP-001</div>
+            </div>
+            <div class="info-field">
+                <label>Revision</label>
+                <div class="editable" contenteditable="true">A</div>
+            </div>
+            <div class="info-field">
+                <label>Client/Customer</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Location/Site</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Date Prepared</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Project Manager</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+        </div>
+
+        <!-- Project Overview -->
+        <div class="section">
+            <div class="section-header">🎯 PROJECT OVERVIEW</div>
+            <div class="content-area editable" contenteditable="true">
+                [Enter project overview and background information here...]
+            </div>
+        </div>
+
+        <!-- Scope of Work -->
+        <div class="section">
+            <div class="section-header">📐 SCOPE OF WORK</div>
+            <div class="content-area editable" contenteditable="true">
+                [Define the complete scope of work including all deliverables, systems, and areas to be covered...]
+            </div>
+        </div>
+
+        <!-- Key Deliverables -->
+        <div class="section">
+            <div class="section-header">✅ KEY DELIVERABLES</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Deliverable Description</th>
+                        <th style="width: 100px;">Type</th>
+                        <th style="width: 80px;">Due Date</th>
+                        <th style="width: 60px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">1</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">2</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">3</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">4</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">5</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">6</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">7</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">8</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="checkbox-cell"><input type="checkbox"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Work Breakdown Structure -->
+        <div class="section">
+            <div class="section-header">🔧 WORK BREAKDOWN STRUCTURE</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">WBS ID</th>
+                        <th>Task/Activity</th>
+                        <th style="width: 120px;">Responsible</th>
+                        <th style="width: 80px;">Duration</th>
+                        <th style="width: 80px;">Start Date</th>
+                        <th style="width: 80px;">End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">1.0</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">1.1</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">1.2</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">2.0</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">2.1</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">2.2</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">3.0</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable monospace" contenteditable="true">3.1</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Two Column Sections -->
+        <div class="two-column">
+            <!-- Resources -->
+            <div class="section">
+                <div class="section-header">👥 RESOURCES</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th style="width: 80px;">Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Milestones -->
+            <div class="section">
+                <div class="section-header">🎯 KEY MILESTONES</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Milestone</th>
+                            <th style="width: 80px;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                        <tr>
+                            <td class="editable" contenteditable="true"></td>
+                            <td class="editable" contenteditable="true"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Risks & Mitigation -->
+        <div class="section">
+            <div class="section-header">⚠️ RISKS & MITIGATION STRATEGIES</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Risk Description</th>
+                        <th style="width: 80px;">Probability</th>
+                        <th style="width: 80px;">Impact</th>
+                        <th>Mitigation Strategy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">1</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">2</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">3</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 600;">4</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Quality & Safety Requirements -->
+        <div class="section">
+            <div class="section-header">🛡️ QUALITY & SAFETY REQUIREMENTS</div>
+            <div class="content-area editable" contenteditable="true">
+                [Outline quality standards, safety protocols, compliance requirements, and testing procedures...]
+            </div>
+        </div>
+
+        <!-- Budget Summary -->
+        <div class="section">
+            <div class="section-header">💰 BUDGET SUMMARY</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th style="width: 120px;">Estimated Cost</th>
+                        <th style="width: 120px;">Actual Cost</th>
+                        <th style="width: 120px;">Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="editable" contenteditable="true">Labor</td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable" contenteditable="true">Materials</td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable" contenteditable="true">Equipment</td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable" contenteditable="true">Subcontractors</td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td class="editable" contenteditable="true">Contingency</td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                    </tr>
+                    <tr style="background: #f1f5f9; font-weight: 600;">
+                        <td>TOTAL</td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                        <td class="editable monospace" contenteditable="true"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Assumptions & Constraints -->
+        <div class="section">
+            <div class="section-header">📝 ASSUMPTIONS & CONSTRAINTS</div>
+            <div class="content-area editable" contenteditable="true">
+                [List key assumptions made during planning and any constraints that may impact project execution...]
+            </div>
+        </div>
+
+        <!-- Approval Section -->
+        <div class="section">
+            <div class="section-header">✍️ PROJECT AUTHORIZATION & APPROVALS</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Role</th>
+                        <th>Name</th>
+                        <th style="width: 150px;">Signature</th>
+                        <th style="width: 100px;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600;">Project Manager</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Engineering Lead</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Client Representative</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Executive Sponsor</td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                        <td class="editable" contenteditable="true"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-field">
+                <label>Document Prepared By</label>
+                <div class="editable" contenteditable="true"></div>
+                <div class="signature-line"></div>
+            </div>
+            <div class="footer-field">
+                <label>Reviewed By</label>
+                <div class="editable" contenteditable="true"></div>
+                <div class="signature-line"></div>
+            </div>
+            <div class="footer-field">
+                <label>Last Modified</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Make all placeholder fields editable
+  document.querySelectorAll('td, p, li, h3, h2').forEach(el => {
+    const text = el.textContent;
+    if ((text.includes('[') && text.includes(']')) || text.includes('___')) {
+      el.contentEditable = 'true';
+      el.style.backgroundColor = '#fffacd';
+      el.style.cursor = 'text';
+      el.classList.add('editable');
+
+      el.addEventListener('focus', function() {
+        this.style.backgroundColor = '#ffffff';
+      });
+
+      el.addEventListener('blur', function() {
+        calculateAll();
+      });
+    }
+  });
+
+  // Add utility buttons
+  const btnContainer = document.createElement('div');
+  btnContainer.className = 'no-print';
+  btnContainer.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999; display: flex; gap: 8px; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);';
+
+  const buttons = [
+    { text: '🖨️ Print', color: '#3498db', action: () => window.print() },
+    { text: '💾 Export', color: '#2ecc71', action: exportHTML },
+    { text: '🔄 Reset', color: '#e74c3c', action: () => location.reload() }
+  ];
+
+  buttons.forEach(btn => {
+    const button = document.createElement('button');
+    button.textContent = btn.text;
+    button.style.cssText = `padding: 8px 16px; background: ${btn.color}; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;`;
+    button.onclick = btn.action;
+    btnContainer.appendChild(button);
+  });
+
+  document.body.appendChild(btnContainer);
+
+  calculateAll();
+});
+
+function calculateAll() {
+  // Add any auto-calculations here
+  console.log('Work Plan template is interactive!');
+}
+
+function exportHTML() {
+  const content = document.documentElement.outerHTML;
+  const blob = new Blob([content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'work_plan_' + new Date().toISOString().slice(0,10) + '.html';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+<style>
+[contenteditable="true"]:hover, .editable:hover {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+[contenteditable="true"]:focus, .editable:focus {
+  outline: 2px solid #2ecc71;
+  outline-offset: 2px;
+  background-color: #ffffff !important;
+}
+@media print {
+  [contenteditable="true"], .editable {
+    background-color: white !important;
+    outline: none !important;
+  }
+  .no-print, button {
+    display: none !important;
+  }
+}
+</style>
+</body>
+</html>
