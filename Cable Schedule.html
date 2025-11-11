@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cable Schedule - KJV Solutions LLC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: 11in 8.5in landscape;
+            margin: 0.5in;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: white;
+            color: #1e293b;
+            line-height: 1.4;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            max-width: 10in;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Section */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #2563EB;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+        }
+
+        .company-info h1 {
+            font-size: 18pt;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2px;
+        }
+
+        .tagline {
+            font-size: 8pt;
+            color: #10B981;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        /* Document Title */
+        .doc-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .doc-title h2 {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1e293b;
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        /* Project Info Grid */
+        .project-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-field label {
+            font-size: 7pt;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .info-field .editable {
+            font-size: 9pt;
+            font-weight: 500;
+            color: #1e293b;
+            padding: 4px 6px;
+            border-bottom: 1px solid #cbd5e1;
+            min-height: 20px;
+        }
+
+        .monospace {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Cable Schedule Table */
+        .cable-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 7.5pt;
+        }
+
+        .cable-table thead {
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            color: white;
+        }
+
+        .cable-table thead th {
+            padding: 6px 4px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #1E40AF;
+            font-size: 7pt;
+        }
+
+        .cable-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .cable-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .cable-table tbody tr:hover {
+            background-color: #eff6ff;
+        }
+
+        .cable-table td {
+            padding: 5px 4px;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .cable-table td.editable {
+            cursor: text;
+        }
+
+        .cable-table td.editable:hover {
+            background-color: #fef3c7;
+        }
+
+        .cable-table td.editable:focus {
+            outline: 2px solid #2563EB;
+            outline-offset: -2px;
+            background-color: #ffffff;
+        }
+
+        /* Number Column */
+        .cable-table td:first-child {
+            text-align: center;
+            font-weight: 600;
+            color: #64748b;
+            background-color: #f1f5f9;
+            width: 25px;
+        }
+
+        /* Cable Tag Column */
+        .cable-table td:nth-child(2) {
+            width: 80px;
+        }
+
+        /* Rev Column */
+        .cable-table td:nth-child(3) {
+            width: 35px;
+            text-align: center;
+        }
+
+        /* Status Column */
+        .cable-table td:nth-child(4) {
+            width: 70px;
+        }
+
+        /* From/To Columns */
+        .cable-table td:nth-child(5),
+        .cable-table td:nth-child(6) {
+            width: 95px;
+        }
+
+        /* Cable Type */
+        .cable-table td:nth-child(7) {
+            width: 90px;
+        }
+
+        /* Size/Pairs */
+        .cable-table td:nth-child(8) {
+            width: 60px;
+            text-align: center;
+        }
+
+        /* Length */
+        .cable-table td:nth-child(9) {
+            width: 50px;
+            text-align: center;
+        }
+
+        /* Routing */
+        .cable-table td:nth-child(10) {
+            width: 100px;
+        }
+
+        /* Termination A/B */
+        .cable-table td:nth-child(11),
+        .cable-table td:nth-child(12) {
+            width: 70px;
+        }
+
+        /* Cable Type Legend */
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .legend-item {
+            font-size: 7pt;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-label {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            color: #1E40AF;
+            min-width: 50px;
+        }
+
+        .legend-desc {
+            color: #64748b;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            font-size: 8pt;
+        }
+
+        .footer-field label {
+            display: block;
+            font-size: 7pt;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .footer-field .editable {
+            display: block;
+            width: 100%;
+            padding: 4px 6px;
+            border-bottom: 1px solid #cbd5e1;
+            min-height: 20px;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+        }
+
+        .checkbox-cell input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        @media print {
+            .container {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="circuitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#2563EB;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="20" cy="20" r="8" fill="url(#circuitGradient)"/>
+                    <circle cx="80" cy="20" r="8" fill="url(#circuitGradient)"/>
+                    <circle cx="50" cy="50" r="10" fill="url(#circuitGradient)"/>
+                    <circle cx="20" cy="80" r="8" fill="url(#circuitGradient)"/>
+                    <circle cx="80" cy="80" r="8" fill="url(#circuitGradient)"/>
+                    <line x1="20" y1="20" x2="50" y2="50" stroke="#10B981" stroke-width="3"/>
+                    <line x1="80" y1="20" x2="50" y2="50" stroke="#10B981" stroke-width="3"/>
+                    <line x1="50" y1="50" x2="20" y2="80" stroke="#10B981" stroke-width="3"/>
+                    <line x1="50" y1="50" x2="80" y2="80" stroke="#10B981" stroke-width="3"/>
+                    <circle cx="20" cy="20" r="4" fill="#10B981"/>
+                    <circle cx="80" cy="20" r="4" fill="#10B981"/>
+                    <circle cx="50" cy="50" r="5" fill="#10B981"/>
+                    <circle cx="20" cy="80" r="4" fill="#10B981"/>
+                    <circle cx="80" cy="80" r="4" fill="#10B981"/>
+                </svg>
+                <div class="company-info">
+                    <h1>KJV SOLUTIONS LLC</h1>
+                    <p class="tagline">Engineering Excellence in Industrial Automation</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Title -->
+        <div class="doc-title">
+            <h2>📋 CABLE SCHEDULE</h2>
+        </div>
+
+        <!-- Project Information -->
+        <div class="project-info">
+            <div class="info-field">
+                <label>Project Name</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Project Number</label>
+                <div class="editable monospace" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Document Number</label>
+                <div class="editable monospace" contenteditable="true">CS-001</div>
+            </div>
+            <div class="info-field">
+                <label>Revision</label>
+                <div class="editable" contenteditable="true">A</div>
+            </div>
+            <div class="info-field">
+                <label>Drawing Reference</label>
+                <div class="editable monospace" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>System/Area</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Date</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="info-field">
+                <label>Page</label>
+                <div class="editable" contenteditable="true">1 of 1</div>
+            </div>
+        </div>
+
+        <!-- Cable Type Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-label">PWR:</span>
+                <span class="legend-desc">Power Cable</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-label">CTRL:</span>
+                <span class="legend-desc">Control Cable</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-label">INST:</span>
+                <span class="legend-desc">Instrumentation Cable</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-label">COMM:</span>
+                <span class="legend-desc">Communication Cable</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-label">FO:</span>
+                <span class="legend-desc">Fiber Optic</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-label">COAX:</span>
+                <span class="legend-desc">Coaxial Cable</span>
+            </div>
+        </div>
+
+        <!-- Cable Schedule Table -->
+        <table class="cable-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Cable Tag</th>
+                    <th>Rev</th>
+                    <th>Status</th>
+                    <th>From (Source)</th>
+                    <th>To (Destination)</th>
+                    <th>Cable Type</th>
+                    <th>Size/Pairs</th>
+                    <th>Length (ft)</th>
+                    <th>Routing/Tray</th>
+                    <th>Term. A</th>
+                    <th>Term. B</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>12</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>13</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>14</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>15</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>16</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>17</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>18</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>19</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+                <tr>
+                    <td>20</td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true">A</td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                    <td class="editable monospace" contenteditable="true"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-field">
+                <label>Prepared By</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="footer-field">
+                <label>Reviewed By</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+            <div class="footer-field">
+                <label>Approved By</label>
+                <div class="editable" contenteditable="true"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Make all placeholder fields editable
+  document.querySelectorAll('td, p, li, h3, h2').forEach(el => {
+    const text = el.textContent;
+    if ((text.includes('[') && text.includes(']')) || text.includes('___')) {
+      el.contentEditable = 'true';
+      el.style.backgroundColor = '#fffacd';
+      el.style.cursor = 'text';
+      el.classList.add('editable');
+
+      el.addEventListener('focus', function() {
+        this.style.backgroundColor = '#ffffff';
+      });
+
+      el.addEventListener('blur', function() {
+        calculateAll();
+      });
+    }
+  });
+
+  // Add utility buttons
+  const btnContainer = document.createElement('div');
+  btnContainer.className = 'no-print';
+  btnContainer.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999; display: flex; gap: 8px; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);';
+
+  const buttons = [
+    { text: '🖨️ Print', color: '#3498db', action: () => window.print() },
+    { text: '💾 Export', color: '#2ecc71', action: exportHTML },
+    { text: '🔄 Reset', color: '#e74c3c', action: () => location.reload() }
+  ];
+
+  buttons.forEach(btn => {
+    const button = document.createElement('button');
+    button.textContent = btn.text;
+    button.style.cssText = `padding: 8px 16px; background: ${btn.color}; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;`;
+    button.onclick = btn.action;
+    btnContainer.appendChild(button);
+  });
+
+  document.body.appendChild(btnContainer);
+
+  calculateAll();
+});
+
+function calculateAll() {
+  // Add any auto-calculations here
+  console.log('Template is interactive!');
+}
+
+function exportHTML() {
+  const content = document.documentElement.outerHTML;
+  const blob = new Blob([content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'template_' + new Date().toISOString().slice(0,10) + '.html';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+<style>
+[contenteditable="true"]:hover, .editable:hover {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+[contenteditable="true"]:focus, .editable:focus {
+  outline: 2px solid #2ecc71;
+  outline-offset: 2px;
+  background-color: #ffffff !important;
+}
+@media print {
+  [contenteditable="true"], .editable {
+    background-color: white !important;
+    outline: none !important;
+  }
+  .no-print, button {
+    display: none !important;
+  }
+}
+</style>
+</body>
+</html>
