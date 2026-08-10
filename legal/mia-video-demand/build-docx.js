@@ -197,16 +197,43 @@ A(
       ['1', 'Demand letter — preservation, records request, and conditional offer', 'Miami-Dade Aviation Department (Risk Management + Records Custodian) and County Attorney'],
       ['2', 'Exhibit A — Conditional Release and Covenant Not to Sue', [run('Enclose with Document 1. '), b('Do not sign until video is delivered.')]],
       ['3', 'Companion letter — American Airlines', 'AA Customer Relations / Legal'],
-      ['4', 'FOIA request — U.S. Customs and Border Protection', 'Only if you fell inside the federal inspection (customs/immigration) area'],
+      ['4', 'FOIA request — U.S. Customs and Border Protection', [b('Send this. '), run('The timeline places the fall inside or adjacent to the federal inspection area — see below')]],
       ['5', 'Optional — §768.28 pre-suit notice of claim', 'Hold in reserve. Send only if the deadline passes.'],
     ]),
   spacer(160),
 
-  h2('Why there are two custodians'),
-  p('You arrived on an international flight from Cozumel. Between the aircraft door and the domestic concourse you passed through a federal inspection area controlled by U.S. Customs and Border Protection, not by the airport. Cameras in that zone are federal. Cameras past it are the County’s. Because you may not know which side of that line you were on, send Document 1 in every case and add Document 4 if there is any chance the fall happened before you cleared customs. Photographing or recording inside the federal inspection area is prohibited, which is exactly why the government’s own footage may be the only record that exists.'),
+  h2('The time window, and how it was derived'),
+  p('You recall falling about twenty minutes after getting off the Cozumel flight. Working forward from the published schedule for AA 4072:'),
+  kvTable([
+    ['Scheduled departure, Cozumel', '3:20 p.m. Cozumel time (UTC−5, no daylight saving)'],
+    ['Same moment in Miami time', '4:20 p.m. EDT'],
+    ['Scheduled block time', '1 hour 46 minutes'],
+    ['Scheduled gate arrival, MIA', '6:06 p.m. EDT — North Terminal (Concourse D)'],
+    ['Deplaning begins', 'roughly 6:10–6:15 p.m. EDT'],
+    ['Fall, ~20 min after deplaning', [b('approximately 6:30–6:45 p.m. EDT')]],
+    ['Preservation window demanded', '2:30 p.m. – 10:30 p.m. EDT (four hours either side)'],
+  ], 4000),
+  spacer(200),
+  box([p([
+    b('This is a schedule-derived estimate, not a confirmed arrival time.'),
+    run(' It was not possible to reach flight-history databases to pull the actual gate arrival for July 27, 2026 — those sites are blocked from the environment this was drafted in. Delays are routine, and if AA 4072 landed an hour late then every figure above shifts by an hour. Confirm the actual time before you send anything. The letters deliberately demand a wide preservation window precisely so that an error of an hour or two does not cost you the footage.'),
+  ], { after: 0 })]),
+  spacer(200),
+  h3('How to pin down the actual time'),
+  bul([b('The American app or aa.com under "Your trips"'), run(' — the receipt for a flown segment usually shows the actual arrival time.')]),
+  bul([b('Your phone.'), run(' Photos, texts, and calls from that afternoon bracket the fall from both sides. If you have Google Maps Timeline (Android) or Significant Locations (iPhone) enabled, it will place you inside the airport minute by minute — usually the most precise record anyone has.')]),
+  bul([b('Any card transaction'), run(' at the airport that evening.')]),
+  bul([b('Your CBP arrival record'), run(' at i94.cbp.dhs.gov, which confirms the date and port of entry.')]),
+  bul([b('Document 3 asks American for it in writing'), run(' — the actual gate-in time and the gate assignments for both segments.')]),
+
+  h2('Why CBP now matters more than the airport'),
+  p([run('Twenty minutes after stepping off an international flight, you were in all likelihood '), i('still inside the federal inspection area'), run(' — the sterile arrivals corridor, the walk toward passport control, the immigration queue, or the descent toward customs and baggage claim. American’s Cozumel service arrives in the North Terminal, and arriving international passengers are held within that controlled path until they clear CBP and are released into the public side of the airport.')]),
+  p([run('That reorders the priorities from the original draft. Cameras in that zone are federal, and Miami-Dade County cannot produce that footage however cooperative it is — it does not own it. '), b('Send Document 4. It is no longer a contingency.'), run(' Send Document 1 as well: the County may hold overlapping views, the exact boundary is not something anyone can reconstruct reliably from memory, and the preservation demand costs nothing to make.')]),
+  p('The one thing that would flip this back toward the County is if you had already cleared customs and re-entered the public terminal before you fell. Twenty minutes is fast for a full clearance, but it is not impossible with Global Entry or Mobile Passport, no checked bags, and short queues. If that describes your arrival, say so — Document 1 becomes the primary track and Document 4 the backup. If you are unsure, send both and let the two custodians sort it out between them.'),
+  p('Photographing or recording inside the federal inspection area is prohibited, which is exactly why the government’s own footage may be the only record of what happened to you that exists anywhere.'),
 
   h2('Before you send — fill in every highlighted blank'),
-  bul([b('Time of the fall.'), run(' Give a window (for example, 2:10 p.m. – 2:40 p.m.) rather than a single minute. Your boarding passes, the CZM–MIA arrival time, and phone photo timestamps will bracket it.')]),
+  bul([b('Time of the fall.'), run(' Pre-filled as approximately 6:30–6:45 p.m. Eastern, derived from the scheduled arrival of AA 4072 as set out above. '), b('Verify it'), run(' against the actual arrival time and correct it if the flight was delayed. Keep it stated as a window, never a single minute.')]),
   bul([b('Location, as precisely as you can manage.'), run(' Concourse letter, gate numbers on either side, the level you were traveling between, and any fixed landmark you can name — a specific retailer, a restroom, a baggage carousel number. "An escalator at MIA" is a request they can honestly fail to fill; "the down escalator between Concourse D gates 30 and 32" is not.')]),
   bul([b('Direction of travel'), run(' (up or down, and toward what).')]),
   bul([b('Witnesses and responders.'), run(' Any name, badge, uniform, or employer you remember.')]),
@@ -253,7 +280,7 @@ A(
   kvTable([
     ['Claimant', 'Keith Vallone'],
     ['Date of incident', 'July 27, 2026'],
-    ['Approximate time', [fill('[time window]')]],
+    ['Approximate time', [run('Approximately '), fill('6:30 p.m. – 6:45 p.m. Eastern time — verify against actual arrival')]],
     ['Location', [run('Miami International Airport — '), fill('[concourse, level, nearest gates or landmark]')]],
     ['Nature of incident', 'Fall on an escalator'],
     ['Itinerary', 'American Airlines Flight 4072, Cozumel (CZM) to Miami (MIA), continuing MIA to New Orleans (MSY), July 27, 2026'],
@@ -267,7 +294,13 @@ A(
 
   h2('I. The Incident'),
   p([
-    run('On July 27, 2026, at approximately '), fill('[time]'), run(', I was traveling '),
+    run('American Airlines Flight 4072 from Cozumel was scheduled to arrive at Miami International Airport at 6:06 p.m. Eastern time on July 27, 2026. I deplaned shortly after the aircraft reached the gate and fell approximately twenty minutes later, which places the incident at roughly '),
+    fill('6:30 p.m. to 6:45 p.m.'), run(' '),
+    b('The County can fix this time precisely from its own gate records, flight information system, and camera timestamps for that arrival, and I ask that it do so rather than treat my estimate as the limit of the search.'),
+    run(' If the flight arrived late, the incident time shifts correspondingly, which is why the preservation window demanded below is deliberately broad.'),
+  ]),
+  p([
+    run('On July 27, 2026, at approximately '), fill('6:35 p.m.'), run(', I was traveling '),
     fill('[direction — e.g., downward]'), run(' on the escalator located at '),
     fill('[describe location as precisely as possible]'), run(' when I fell. '),
     fill('[Add a brief, factual description of the fall and of any condition you observed — for example, an abrupt stop or jolt, an uneven or damaged step, a missing or non-moving handrail, a wet or slick step surface, inadequate lighting, or an absent warning sign. State only what you actually observed. If you do not know what caused the fall, say so plainly.]'),
@@ -278,7 +311,7 @@ A(
 
   h2('II. Notice of Preservation Obligation — Litigation Hold'),
   p([b('Litigation arising from this incident is reasonably anticipated. This letter constitutes formal written notice of that fact.'), run(' The County’s common-law obligation to preserve relevant evidence attaches upon receipt of this letter, if it has not already attached. You are directed to suspend immediately any automatic deletion, overwrite, recycling, purge, or retention-cycle process that would destroy or degrade any of the following, and to issue a written litigation hold to every custodian, department, contractor, and vendor in possession of it:')]),
-  li([b('All surveillance and CCTV video'), run(' — recorded, archived, exported, or live-buffered — depicting the escalator identified above, its landings, and the approaches to it, from '), b('four (4) hours before'), run(' through '), b('four (4) hours after'), run(' the incident. This includes every camera with any view of the location, not solely the camera with the best view, and includes footage from cameras owned or operated by tenants, concessionaires, or contractors to the extent the County has possession, custody, or control of it.')], 'n2'),
+  li([b('All surveillance and CCTV video'), run(' — recorded, archived, exported, or live-buffered — depicting the escalator identified above, its landings, and the approaches to it, from '), b('four (4) hours before'), run(' through '), b('four (4) hours after'), run(' the incident, and in any event covering no narrower a period than '), b('2:30 p.m. to 10:30 p.m. Eastern time on July 27, 2026'), run('. This period is stated in the alternative because my estimate of the time is derived from the scheduled arrival of Flight 4072 and the County is better positioned than I am to determine the actual arrival time; the video is not to be withheld or the search narrowed on the ground that my estimate was imprecise. This includes every camera with any view of the location, not solely the camera with the best view, and includes footage from cameras owned or operated by tenants, concessionaires, or contractors to the extent the County has possession, custody, or control of it.')], 'n2'),
   li([b('All video of the same escalator'), run(' for the seven (7) days preceding the incident, which bears directly on notice of any recurring or dangerous condition.')], 'n2'),
   li([b('All native metadata'), run(' associated with the foregoing — camera identifiers, positions and fields of view, frame rates, resolution settings, time-synchronization data, and audit or export logs showing every person who viewed, copied, exported, or deleted the footage.')], 'n2'),
   li([b('All incident, accident, injury, and first-responder records'), run(' relating to the incident, including any report by airport operations, airport police, Miami-Dade Fire Rescue, emergency medical services, or any airline or contractor employee.')], 'n2'),
@@ -427,7 +460,8 @@ A(
   pl([b('RE:  EVIDENCE PRESERVATION NOTICE AND REQUEST FOR RECORDS — Passenger fall at Miami International Airport, July 27, 2026 | Ticket 0012363031275 | PNR OYRTCS | AA 4072 CZM–MIA')], { after: 200 }),
 
   pl('To Whom It May Concern:'),
-  p([run('On July 27, 2026, I was traveling on American Airlines under the ticket and record locator above, from Cozumel to Miami on Flight 4072 and continuing from Miami to New Orleans. During my connection at Miami International Airport, I fell on an escalator at approximately '), fill('[time]'), run(' at or near '), fill('[location]'), run('.')]),
+  p([run('On July 27, 2026, I was traveling on American Airlines under the ticket and record locator above, from Cozumel to Miami on Flight 4072 and continuing from Miami to New Orleans. During my connection at Miami International Airport, I fell on an escalator at approximately '), fill('6:35 p.m. Eastern time'), run(' at or near '), fill('[location]'), run('.')]),
+  p([run('I fell roughly twenty minutes after leaving the aircraft. Flight 4072 was scheduled to arrive at 6:06 p.m. Eastern time, which places the incident at approximately '), fill('6:30 p.m. to 6:45 p.m.'), run(' American knows the actual gate arrival time for that flight and I do not, which is why Item 4 of my requests below asks for it. Please treat American’s own record of that arrival as the authoritative anchor for the time of this incident rather than my estimate, and search accordingly.')]),
   p('I am writing to place American Airlines on notice of its obligation to preserve evidence relating to this incident and to request records. My purpose is to obtain a video record of what happened, not to bring a claim against the airline, and I have made a parallel request to the Miami-Dade Aviation Department.'),
 
   h2('Preservation Notice'),
@@ -473,8 +507,8 @@ A(
   p('Pursuant to the Freedom of Information Act, 5 U.S.C. § 552, and the Privacy Act, 5 U.S.C. § 552a, I request records concerning myself and an incident in which I was involved.'),
 
   box([p([
-    b('Send this letter only if your fall occurred before you cleared customs and immigration.'),
-    run(' Cameras inside the federal inspection area belong to CBP, and the airport cannot produce that footage no matter how cooperative it is. If you are unsure which side of the line you were on, send it anyway — a FOIA request costs you nothing but postage, and a "no records" response definitively narrows the search.'),
+    b('Send this letter.'),
+    run(' Falling about twenty minutes after leaving an international arrival places you inside or immediately adjacent to the federal inspection area. Cameras in that zone belong to CBP, and the airport cannot produce that footage no matter how cooperative it is — it does not own it. Send this even if you believe you had already cleared customs: a FOIA request costs nothing but postage, and a "no records" response definitively narrows the search to the County.'),
   ], { after: 0 })]),
   spacer(200),
 
@@ -493,7 +527,7 @@ A(
 
   h2('Records Requested'),
   p('For the date of July 27, 2026, at Miami International Airport:'),
-  li([run('All closed-circuit television or other video recordings from any camera within the Federal Inspection Area, Customs and Border Protection primary or secondary inspection areas, or the arrivals corridor between the aircraft arrival gate and the exit from the federal inspection area, covering the period from '), fill('[start time]'), run(' to '), fill('[end time]'), run(', and specifically any footage depicting an escalator at or near '), fill('[location]'), run(' and any footage depicting me falling on an escalator;')], 'n6'),
+  li([run('All closed-circuit television or other video recordings from any camera within the Federal Inspection Area, Customs and Border Protection primary or secondary inspection areas, or the arrivals corridor between the aircraft arrival gate and the exit from the federal inspection area, covering the period from '), fill('4:00 p.m.'), run(' to '), fill('9:00 p.m.'), run(' Eastern time, and specifically any footage depicting an escalator at or near '), fill('[location]'), run(' and any footage depicting me falling on an escalator. American Airlines Flight 4072 from Cozumel was scheduled to arrive at 6:06 p.m. Eastern time and I fell approximately twenty minutes after deplaning; the window above is stated broadly because I do not know the flight’s actual arrival time, which CBP can establish from the records requested in Item 2 below;')], 'n6'),
   li('All records of my inspection, admission, and processing on that date, including my arrival record and any TECS or Automated Passport Control transaction records, which will establish the precise times at which I entered and exited the federal inspection area;', 'n6'),
   li('All incident, injury, or assistance reports generated by CBP personnel relating to a passenger fall at that location on that date; and', 'n6'),
   li('All communications between CBP and the Miami-Dade Aviation Department, airport operations, emergency medical services, or American Airlines concerning such an incident.', 'n6'),
@@ -545,7 +579,7 @@ A(
     ['Claimant', [run('Keith Vallone, '), fill('[address]'), run(', DOB '), fill('[DOB]')]],
     ['Agency', 'Miami-Dade County / Miami-Dade Aviation Department'],
     ['Date of loss', 'July 27, 2026'],
-    ['Time', [fill('[time]')]],
+    ['Time', [run('Approximately '), fill('6:30 p.m. – 6:45 p.m. Eastern time')]],
     ['Place', [run('Miami International Airport — '), fill('[precise location]')]],
   ]),
   spacer(200),
