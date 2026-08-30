@@ -37,6 +37,13 @@ LINE2_PVE2_RING0="TODO"           # bridge for this -- keep it off the panel VLA
 LINE2_QDEVICE_ADDR="TODO"         # host running corosync-qnetd (see STAGING.md --
 LINE2_QDEVICE_USER="root"         # on a Synology this is a Debian container, not DSM)
 
+# Subnets deliberately renumbered at this site, as "from=to" prefixes.
+# The panel VLAN moves 192.168.50.x -> 192.168.51.x; 192.168.100.x is kept
+# identical to the existing cluster. Parity applies this to the baseline so
+# the intended change does not read as drift, while still catching a host
+# left on the old subnet or renumbered to the wrong one.
+LINE2_SUBNET_REMAP="192.168.50=192.168.51"
+
 LINE2_TIMEZONE="America/Chicago"
 LINE2_NTP_SERVERS="TODO"          # air-gapped: your local time source
 
@@ -52,8 +59,8 @@ LINE2_NTP_SERVERS="TODO"          # air-gapped: your local time source
 # machines -- run preflight on each host to read its real names.
 LINE2_PVE1_BRIDGES="
 vmbr0|TODO|TODO|
-|mgmt + corosync (kjv1: 192.168.100.0/24, no gateway)
-vmbr1|TODO|TODO|TODO|panel VLAN -- kiosks live here (kjv1: 192.168.50.0/24, gw .1)
+|mgmt + corosync -- 192.168.100.0/24, SAME as existing, no gateway
+vmbr1|TODO|TODO|TODO|panel VLAN -- NEW SITE USES 192.168.51.0/24, gw .51.1
 vmbr2|TODO|TODO|
 |third network (kjv1: 192.168.12.0/24, no gateway)
 "
@@ -94,6 +101,13 @@ NASH_PVE2_RING0="TODO"
 NASH_QDEVICE_ADDR="TODO"
 NASH_QDEVICE_USER="root"
 
+# Subnets deliberately renumbered at this site, as "from=to" prefixes.
+# The panel VLAN moves 192.168.50.x -> 192.168.51.x; 192.168.100.x is kept
+# identical to the existing cluster. Parity applies this to the baseline so
+# the intended change does not read as drift, while still catching a host
+# left on the old subnet or renumbered to the wrong one.
+NASH_SUBNET_REMAP="192.168.50=192.168.51"
+
 NASH_TIMEZONE="America/Chicago"
 NASH_NTP_SERVERS="TODO"
 
@@ -102,8 +116,8 @@ NASH_NTP_SERVERS="TODO"
 # machines -- run preflight on each host to read its real names.
 NASH_PVE1_BRIDGES="
 vmbr0|TODO|TODO|
-|mgmt + corosync (kjv1: 192.168.100.0/24, no gateway)
-vmbr1|TODO|TODO|TODO|panel VLAN -- kiosks live here (kjv1: 192.168.50.0/24, gw .1)
+|mgmt + corosync -- 192.168.100.0/24, SAME as existing, no gateway
+vmbr1|TODO|TODO|TODO|panel VLAN -- NEW SITE USES 192.168.51.0/24, gw .51.1
 vmbr2|TODO|TODO|
 |third network (kjv1: 192.168.12.0/24, no gateway)
 "

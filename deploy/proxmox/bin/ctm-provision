@@ -218,6 +218,12 @@ stage_parity() {
   first="$(printf '%s' "$refs" | awk '{print $1}')"
   [[ -n "$first" ]] || die "inventory: $(upper "$SITE")_REFERENCE_NODES is not set"
 
+  # Deliberate renumbering at this site (e.g. panel VLAN 192.168.50 -> .51) is
+  # applied to the baseline before diffing, so an intended change is not
+  # reported as drift on every run.
+  export SUBNET_REMAP="$(var "$SITE" SUBNET_REMAP)"
+  [[ -n "$SUBNET_REMAP" ]] && log "subnet remap: ${SUBNET_REMAP}"
+
   base="${BASELINE_DIR}/${SITE}-$(printf '%s' "$first" | tr -c 'a-zA-Z0-9._-' '_').capture"
   [[ -f "$base" ]] || die "no baseline at ${base#"$HERE"/} -- run the 'capture' stage first"
 

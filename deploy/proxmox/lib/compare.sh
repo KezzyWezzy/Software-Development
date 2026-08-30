@@ -42,6 +42,30 @@ _mask_addrs() {
     -e 's/Membership information.*/Membership information/'
 }
 
+# _apply_remap -- rewrite deliberately renumbered subnets on the BASELINE side
+# so an intended change does not read as drift.
+#
+# The new site keeps 192.168.100.0/24 but moves the panel VLAN from
+# 192.168.50.0/24 to 192.168.51.0/24. Without this, every interfaces line would
+# be flagged on every run, and a report that always cries drift is a report
+# nobody reads. Remapping is deliberately narrow: it rewrites only the exact
+# network prefixes listed in SUBNET_REMAP, so any OTHER address difference is
+# still caught.
+#
+# SUBNET_REMAP: whitespace-separated "from=to" prefixes, e.g. "192.168.50=192.168.51"
+_apply_remap() {
+  if [[ -z "${SUBNET_REMAP:-}" ]]; then cat; return; fi
+  local args=() pair from to
+  for pair in $SUBNET_REMAP; do
+    from="${pair%%=*}"; to="${pair##*=}"
+    [[ -n "$from" && -n "$to" && "$from" != "$pair" ]] || continue
+    # Anchor on a following dot so 192.168.5 cannot match 192.168.50.
+    args+=(-e "s/\\b${from//./\\.}\\./${to}./g")
+  done
+  [[ ${#args[@]} -eq 0 ]] && { cat; return; }
+  sed -E "${args[@]}"
+}
+
 # _split_sections FILE OUTDIR -- one file per '##### ' section, numbered so
 # ordering is preserved.
 _split_sections() {
@@ -85,13 +109,13 @@ compare_captures() {
 
     if [[ "$title_l" =~ $_addr_sensitive_re ]]; then
       # Structural comparison with addresses masked.
-      if diff -q <(_mask_addrs < "$bb") <(_mask_addrs < "$cc") >/dev/null 2>&1; then
+      if diff -q <(_apply_remap < "$bb" | _mask_addrs) <(_mask_addrs < "$cc") >/dev/null 2>&1; then
         printf '  %s[ ok ]%s %s %s(structure matches; addresses differ)%s\n' \
           "$_c_grn" "$_c_off" "$title" "$_c_dim" "$_c_off"
       else
         printf '  %s[DRIFT]%s %s %s(structural)%s\n' \
           "$_c_red" "$_c_off" "$title" "$_c_dim" "$_c_off"
-        diff -u <(_mask_addrs < "$bb") <(_mask_addrs < "$cc") \
+        diff -u <(_apply_remap < "$bb" | _mask_addrs) <(_mask_addrs < "$cc") \
           | tail -n +3 | sed 's/^/        /'
         drift=1
       fi

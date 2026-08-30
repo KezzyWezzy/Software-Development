@@ -55,6 +55,20 @@ what it is called, but a missing QDevice, a missing `nofailback`, a single-node
 cluster, a changed bridge port or a missing storage definition are all still
 reported as drift.
 
+### Deliberate renumbering
+
+The new site keeps `192.168.100.0/24` but moves the panel VLAN to
+`192.168.51.0/24`. Declare that in the inventory so parity does not report the
+intended change on every run:
+
+```bash
+LINE2_SUBNET_REMAP="192.168.50=192.168.51"
+```
+
+It rewrites the baseline before diffing, so the intended move reads clean while
+a host left on the old subnet — or `192.168.100.x` renumbered by mistake — is
+still caught. See [`../../docs/ADDRESS-PLAN-new-site.md`](../../docs/ADDRESS-PLAN-new-site.md).
+
 Then close each `[DRIFT]` with the stage that owns it (`postinstall` for repos,
 time and packages; `network` for bridges; `storage` for the NAS) and re-run
 `parity` until it comes back clean.

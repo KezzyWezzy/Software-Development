@@ -76,9 +76,10 @@ Runbook artifact.
 
 Decide and record here before provisioning:
 
-- Panel VLAN and CTM server address at each site — Red River's
-  `192.168.50.0/24` cannot simply be reused at both sites if the two are ever
-  routed together; overlapping subnets will collide.
+- ~~Panel VLAN at each site~~ — **decided.** The new site uses
+  `192.168.51.0/24`, keeping host octets (CTM server `.129`, gateway `.1`).
+  `192.168.100.0/24` stays identical to the existing cluster. See
+  [ADDRESS-PLAN-new-site.md](ADDRESS-PLAN-new-site.md).
 - Bay count and therefore the kiosk/port allocation per site.
 - Whether each site runs its own CTM server (site-independent, survives a WAN
   loss) or both point at one — this drives whether the Proxmox HA cluster is
