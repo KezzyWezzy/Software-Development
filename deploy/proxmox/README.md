@@ -59,6 +59,29 @@ Then close each `[DRIFT]` with the stage that owns it (`postinstall` for repos,
 time and packages; `network` for bridges; `storage` for the NAS) and re-run
 `parity` until it comes back clean.
 
+### Capturing without filling in the inventory
+
+The capture scripts are self-contained and take no arguments, so you can pipe
+one over SSH directly — no inventory, no baseline directory, nothing to set up:
+
+```bash
+# a Proxmox host
+ssh root@<existing-server> "bash -s" < scripts/01-capture.sh > existing-1.capture
+
+# the NAS / QDevice host
+ssh root@<nas> "bash -s" < scripts/02-capture-nas.sh > nas.capture
+```
+
+Both are read-only and write nothing to the host. This is the fastest way to
+get a full picture of a running system.
+
+`02-capture-nas.sh` covers the NAS side specifically: platform and package
+manager (which decides whether `corosync-qnetd` can be installed natively or
+needs a Debian container), qnetd service state, the clusters qnetd is actually
+arbitrating for, NFS exports, listening ports (5403/2049/111), pools, and
+whether root SSH is set up — `pvecm qdevice setup` drives the NAS over SSH as
+root, so that last one is a prerequisite, not a detail.
+
 ### Captured files hold plant addressing
 
 `baseline/` is gitignored. Capture redacts anything matching
