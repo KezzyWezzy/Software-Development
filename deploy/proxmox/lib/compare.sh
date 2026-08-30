@@ -14,17 +14,31 @@ _expected_diff_re='^(identity|cpu and memory class|block devices and pools|quoru
 # node and nofailback -- is exactly what must match.
 _addr_sensitive_re='^(/etc/network/interfaces|cluster|storage configuration|ha configuration|quorum)'
 
-# Replace IPv4 addresses and hostnames with placeholders so that a structural
-# comparison is not swamped by every host having its own address.
+# Replace IPv4 addresses, node names and MAC-derived NIC names with
+# placeholders, so a structural comparison is not swamped by values that are
+# unique to each machine by construction.
+#
+# enx*/wlx* names embed the adapter's MAC address (predictable-naming for USB
+# and wireless NICs), so two servers of the SAME model still get different
+# interface names. Without masking these, every bridge-port line reads as drift
+# and the real differences get lost in the noise.
+#
+# Only the HOST octet of an IPv4 address is masked, not the whole address. The
+# subnet a bridge carries is the invariant that must match between servers;
+# only the host's own number in it is allowed to differ. Masking the full
+# address would hide a bridge wired to the wrong network, which is precisely
+# the mistake worth catching.
 _mask_addrs() {
   sed -E \
-    -e 's/\b([0-9]{1,3}\.){3}[0-9]{1,3}\b/<IP>/g' \
+    -e 's/\b(([0-9]{1,3}\.){3})[0-9]{1,3}\b/\1<H>/g' \
     -e 's/^([[:space:]]*cluster_name:[[:space:]]*).*/\1<CLUSTER>/' \
     -e 's/^([[:space:]]*name:[[:space:]]*).*/\1<NODE>/' \
     -e 's/^([[:space:]]*ring0_addr:[[:space:]]*).*/\1<IP>/' \
     -e 's/^(group:[[:space:]]*).*/\1<GROUP>/' \
     -e 's/^([[:space:]]*nodes[[:space:]]+).*/\1<NODES>/' \
-    -e 's/\b(pve|node)[0-9]+\b/<NODE>/g' \
+    -e 's/\benx[0-9a-f]{12}\b/<ENX-NIC>/g' \
+    -e 's/\bwlx[0-9a-f]{12}\b/<WLX-NIC>/g' \
+    -e 's/\b(pve|node|kjv)[0-9]+\b/<NODE>/g' \
     -e 's/Membership information.*/Membership information/'
 }
 
