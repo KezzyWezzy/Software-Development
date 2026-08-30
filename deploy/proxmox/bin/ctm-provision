@@ -59,7 +59,6 @@ stage_preflight() {
   local host rc=0
   for host in "$N1" "$N2"; do
     rsh_script "$host" "${S}/00-preflight.sh" \
-      "EXPECT_PANEL_CIDR=$(var "$SITE" PANEL_CIDR)" \
       "OFFLINE_BUNDLE_PATH=${OFFLINE_BUNDLE_PATH}" || rc=1
   done
   [[ $rc -eq 0 ]] || die "preflight failed -- fix the items above before continuing"
@@ -68,30 +67,36 @@ stage_preflight() {
 
 stage_postinstall() {
   step "post-install -- ${SITE}"
+  require_all "$SITE" TIMEZONE NTP_SERVERS
   local host
   for host in "$N1" "$N2"; do
     log "post-install on ${host}"
     rsh_script "$host" "${S}/10-pve-postinstall.sh" \
-      "TIMEZONE=$(require_var "$SITE" TIMEZONE)" \
-      "NTP_SERVERS=$(require_var "$SITE" NTP_SERVERS)" \
+      "TIMEZONE=$(var "$SITE" TIMEZONE)" \
+      "NTP_SERVERS=$(var "$SITE" NTP_SERVERS)" \
       "OFFLINE_BUNDLE_PATH=${OFFLINE_BUNDLE_PATH}"
   done
   ok "post-install done"
 }
 
 stage_network() {
-  step "panel-VLAN bridge -- ${SITE}"
-  warn "this edits /etc/network/interfaces; vmbr0 (your SSH path) is never touched"
+  step "bridges -- ${SITE}"
+  require_all "$SITE" PVE1_BRIDGES PVE2_BRIDGES
+  warn "this edits /etc/network/interfaces; existing bridges are never touched"
   confirm "proceed with network changes on ${SITE}?" || die "aborted"
-  local host
+
+  # Bridge specs are PER NODE, not per site: each host has its own address on
+  # every bridge, and the NIC names are MAC-derived (enx*) so they differ even
+  # between identical machines. Sharing one spec would hand node 2 node 1's
+  # addresses and collide on the panel VLAN.
+  local host idx=0
   for host in "$N1" "$N2"; do
-    log "vmbr1 on ${host}"
+    idx=$((idx+1))
+    log "bridges on ${host} (node ${idx})"
     rsh_script "$host" "${S}/20-network.sh" \
-      "PANEL_IFACE=$(require_var "$SITE" PANEL_IFACE)" \
-      "PANEL_VLAN=$(var "$SITE" PANEL_VLAN)" \
-      "PANEL_CIDR=$(var "$SITE" PANEL_CIDR)"
+      "BRIDGES=$(var "$SITE" "PVE${idx}_BRIDGES")"
   done
-  ok "panel bridge configured"
+  ok "bridges configured"
 }
 
 # pvecm add --use_ssh needs node2 -> node1 root SSH. Password auth is off by
@@ -119,6 +124,7 @@ exchange_root_keys() {
 
 stage_cluster() {
   step "cluster -- ${SITE}"
+  require_all "$SITE" CLUSTER_NAME PVE1_RING0 PVE2_RING0
   local name r1 r2
   name="$(require_var "$SITE" CLUSTER_NAME)"
   r1="$(require_var "$SITE" PVE1_RING0)"
@@ -139,6 +145,7 @@ stage_cluster() {
 
 stage_qdevice() {
   step "QDevice -- ${SITE}"
+  require_all "$SITE" QDEVICE_ADDR
   local qaddr quser
   qaddr="$(require_var "$SITE" QDEVICE_ADDR)"
   quser="$(var "$SITE" QDEVICE_USER)"
@@ -162,10 +169,9 @@ stage_ha() {
 
 stage_storage() {
   step "NAS storage -- ${SITE}"
+  require_all "$SITE" STORAGE
   rsh_script "$N1" "${S}/30-storage.sh" \
-    "NAS_STORAGE_ID=$(require_var "$SITE" NAS_STORAGE_ID)" \
-    "NAS_STORAGE_HOST=$(require_var "$SITE" NAS_STORAGE_HOST)" \
-    "NAS_STORAGE_EXPORT=$(require_var "$SITE" NAS_STORAGE_EXPORT)"
+    "STORAGES=$(var "$SITE" STORAGE)"
   ok "storage attached"
 }
 
@@ -179,6 +185,7 @@ BASELINE_DIR="${HERE}/baseline"
 
 stage_capture() {
   step "capture baseline -- ${SITE}"
+  require_all "$SITE" REFERENCE_NODES
   local refs r name out
   refs="$(var "$SITE" REFERENCE_NODES)"
   [[ -n "$refs" ]] || die "inventory: $(upper "$SITE")_REFERENCE_NODES is not set -- \

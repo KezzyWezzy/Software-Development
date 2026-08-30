@@ -33,6 +33,35 @@ require_var() {
   printf '%s' "$v"
 }
 
+# require_all SITE SUFFIX... -- validate inventory values in the CALLING shell.
+#
+# require_var cannot be relied on for this. Used inline as "VAR=$(require_var
+# ...)", its die() exits only the command substitution's subshell: the message
+# is printed, the caller carries on with an empty value, and the stage reports
+# success having configured nothing. Only an assignment propagates the failure,
+# and even then `local v="$(...)"` swallows it because `local` is the command
+# whose status is reported.
+#
+# So preconditions are checked here, up front, where exit actually exits.
+# A multi-line spec containing TODO anywhere counts as unfilled.
+require_all() {
+  local site="$1"; shift
+  local suffix v missing=()
+  for suffix in "$@"; do
+    v="$(var "$site" "$suffix")"
+    if [[ -z "${v//[[:space:]]/}" ]]; then
+      missing+=("$(upper "$site")_${suffix} — not set")
+    elif [[ "$v" == *TODO* ]]; then
+      missing+=("$(upper "$site")_${suffix} — still contains TODO")
+    fi
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    printf '%sfail%s inventory is incomplete:\n' "$_c_red" "$_c_off" >&2
+    printf '       - %s\n' "${missing[@]}" >&2
+    exit 1
+  fi
+}
+
 # ssh_opts -- key auth only, no host-key prompts on a fresh install, short timeout
 ssh_opts() {
   printf '%s' \

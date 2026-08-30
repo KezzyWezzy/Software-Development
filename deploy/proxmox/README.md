@@ -132,7 +132,7 @@ Or stage by stage, which is what you want the first time through:
 | `network` | Adds `vmbr1` for the panel VLAN. Never touches `vmbr0`. | medium — see below |
 | `cluster` | Creates the cluster on node 1, joins node 2. | **destructive on node 2** |
 | `qdevice` | Installs `corosync-qnetd` on the NAS, registers it. | low |
-| `storage` | Attaches the NAS over NFS. | low |
+| `storage` | Adds every storage in the spec (nfs/cifs/iscsi/lvm). | low |
 | `ha` | Creates the HA group. Refuses to run without a QDevice. | low |
 
 `--dry-run` prints every remote command without executing. `--yes` skips the
@@ -146,9 +146,16 @@ the cluster's copy. Both join scripts abort if the node has any guest defined,
 but if you configured storage or users on node 2 first, that is gone. Do the
 cluster stage before anything else that writes to `/etc/pve`.
 
-**The network stage can strand a host.** It only ever appends `vmbr1` and
-explicitly refuses to use a NIC already enslaved to `vmbr0`, and it restores the
-previous `/etc/network/interfaces` if `ifreload` fails. But if `ifupdown2` is
+**The network stage can strand a host.** It only ever *adds* bridges that do
+not exist — an existing `vmbr0` is skipped, never edited — and it refuses a NIC
+already enslaved elsewhere. It restores the previous `/etc/network/interfaces`
+if `ifreload` fails.
+
+**Bridge specs are per node, not per site.** Each host has its own address on
+every bridge, and `enx*` names are MAC-derived so they differ even between
+identical machines. `*_PVE1_BRIDGES` and `*_PVE2_BRIDGES` are separate for that
+reason — sharing one spec would hand node 2 node 1's addresses and collide on
+the panel VLAN. Run `preflight` on each host to read its real NIC names. But if `ifupdown2` is
 not installed it writes the config without applying it and tells you to apply it
 at the physical console — do that, do not reboot and hope.
 

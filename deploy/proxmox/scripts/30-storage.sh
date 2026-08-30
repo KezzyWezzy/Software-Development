@@ -1,39 +1,85 @@
-# Runs ON one Proxmox host per cluster (storage config is cluster-wide in /etc/pve).
-# Attaches the NAS as shared storage for backups, ISOs and CT templates.
+# Runs ON one node per cluster -- storage config lives in /etc/pve and is
+# cluster-wide, so adding it twice is redundant, not harmful.
 #
-# env in: NAS_STORAGE_ID NAS_STORAGE_HOST NAS_STORAGE_EXPORT
+# Adds every storage in the spec that is not already defined. Never edits or
+# removes an existing definition: a wrong edit here detaches running guests
+# from their disks.
+#
+# env in: STORAGES -- newline-separated records, fields separated by |
+#           type|id|server|path|content|extra
+#         type   nfs | cifs | iscsi | lvm
+#         path   nfs: export   cifs: share   iscsi: target IQN   lvm: vgname
+#         extra  additional pvesm flags, passed through verbatim
 set -euo pipefail
-
-# Remote scripts arrive via `ssh host "bash -s"`, a non-login shell whose PATH
-# is not guaranteed to include sbin -- where ip, pvecm, pvesm and pvesh all live.
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 say() { printf '  %s\n' "$*"; }
 
-for v in NAS_STORAGE_ID NAS_STORAGE_HOST NAS_STORAGE_EXPORT; do
-  [[ -n "${!v:-}" ]] || { say "ERROR: $v unset"; exit 1; }
-done
+[[ -n "${STORAGES:-}" ]] || { say "STORAGES unset -- nothing to do"; exit 0; }
+command -v pvesm >/dev/null 2>&1 || { say "ERROR: pvesm not found"; exit 1; }
 
-if pvesm status --storage "$NAS_STORAGE_ID" >/dev/null 2>&1; then
-  say "storage '$NAS_STORAGE_ID' already defined"
-else
-  # showmount confirms the export exists before we commit it to cluster config;
-  # a wrong export path otherwise shows up much later as a failed backup job.
-  if command -v showmount >/dev/null 2>&1; then
-    if showmount -e "$NAS_STORAGE_HOST" 2>/dev/null | grep -q "$NAS_STORAGE_EXPORT"; then
-      say "verified export ${NAS_STORAGE_HOST}:${NAS_STORAGE_EXPORT}"
-    else
-      say "ERROR: ${NAS_STORAGE_HOST} does not export ${NAS_STORAGE_EXPORT}"
-      showmount -e "$NAS_STORAGE_HOST" 2>/dev/null | sed 's/^/      /' || true
-      exit 1
-    fi
+added=0 skipped=0
+while IFS='|' read -r type id server path content extra; do
+  [[ -z "${type// }" || "$type" == \#* ]] && continue
+
+  for req in type id; do
+    [[ -n "${!req}" ]] || { say "ERROR: record missing $req: $type|$id"; exit 1; }
+  done
+
+  if pvesm status --storage "$id" >/dev/null 2>&1; then
+    say "${id}: already defined -- left untouched"
+    skipped=$((skipped+1))
+    continue
   fi
 
-  pvesm add nfs "$NAS_STORAGE_ID" \
-    --server "$NAS_STORAGE_HOST" \
-    --export "$NAS_STORAGE_EXPORT" \
-    --content backup,iso,vztmpl \
-    --options vers=4.1
-  say "added NFS storage '$NAS_STORAGE_ID'"
-fi
+  case "$type" in
+    nfs)
+      [[ -n "$server" && -n "$path" ]] || { say "ERROR: ${id}: nfs needs server and export"; exit 1; }
+      # Confirm the export really exists before committing it to cluster
+      # config; a wrong path otherwise surfaces later as a failed backup job.
+      if command -v showmount >/dev/null 2>&1; then
+        if showmount -e "$server" 2>/dev/null | awk '{print $1}' | grep -qx "$path"; then
+          say "${id}: verified export ${server}:${path}"
+        else
+          say "ERROR: ${id}: ${server} does not export ${path}. It offers:"
+          showmount -e "$server" 2>/dev/null | sed 's/^/        /' || say "        (showmount returned nothing)"
+          exit 1
+        fi
+      fi
+      # shellcheck disable=SC2086
+      pvesm add nfs "$id" --server "$server" --export "$path" \
+        ${content:+--content "$content"} $extra
+      ;;
+    cifs)
+      [[ -n "$server" && -n "$path" ]] || { say "ERROR: ${id}: cifs needs server and share"; exit 1; }
+      # Credentials must come from --username/--password in extra. Putting a
+      # password in the inventory is why inventory/sites.sh is gitignored.
+      # shellcheck disable=SC2086
+      pvesm add cifs "$id" --server "$server" --share "$path" \
+        ${content:+--content "$content"} $extra
+      ;;
+    iscsi)
+      [[ -n "$server" && -n "$path" ]] || { say "ERROR: ${id}: iscsi needs portal and target IQN"; exit 1; }
+      # content is normally 'none' -- an iSCSI storage usually carries an LVM
+      # storage on top rather than holding images directly.
+      # shellcheck disable=SC2086
+      pvesm add iscsi "$id" --portal "$server" --target "$path" \
+        --content "${content:-none}" $extra
+      ;;
+    lvm)
+      [[ -n "$path" ]] || { say "ERROR: ${id}: lvm needs a vgname"; exit 1; }
+      # shellcheck disable=SC2086
+      pvesm add lvm "$id" --vgname "$path" \
+        ${content:+--content "$content"} $extra
+      ;;
+    *)
+      say "ERROR: ${id}: unsupported storage type '${type}'"
+      exit 1
+      ;;
+  esac
 
-pvesm status --storage "$NAS_STORAGE_ID" | sed 's/^/    /'
+  say "${id}: added (${type})"
+  added=$((added+1))
+done <<< "$STORAGES"
+
+say "storage: ${added} added, ${skipped} already present"
+pvesm status 2>/dev/null | sed 's/^/    /'

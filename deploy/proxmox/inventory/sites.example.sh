@@ -1,64 +1,88 @@
 #!/usr/bin/env bash
 # CTM Proxmox site inventory  --  COPY TO sites.sh AND FILL IN, DO NOT COMMIT sites.sh
 #
-# Sourced by bin/ctm-provision on the CONTROL machine (your laptop / jump box on
-# the plant network). Never copied to the Proxmox hosts.
+# Sourced by bin/ctm-provision on the CONTROL machine (your laptop or a jump box
+# on the plant network). Never copied to the Proxmox hosts.
 #
-# Conventions come from the verified Red River build (see docs/CTM-SITE-CONVENTIONS.md):
-#   panel VLAN            192.168.50.0/24
-#   CTM server            .129
-#   per-kiosk nginx port  7001 + bay index
+# Prefilled to mirror the existing kjv1/kjv2 build (see docs/EXISTING-CLUSTER-kjv.md):
+# three bridges, a Synology serving three NFS stores plus an iSCSI LUN, and a
+# two-node cluster with a QDevice for the third vote.
 #
-# Every value marked TODO must be replaced before any script will run; preflight
-# refuses to continue while a TODO remains.
-
+# Every TODO must be replaced. Preflight refuses to run while one remains.
 
 # ---------------------------------------------------------------------------
-# Reference servers -- the EXISTING, known-good pair the new servers must match.
-# The 'capture' stage reads their config; 'parity' diffs the new hosts against
-# it. Both are read-only on these boxes; nothing is ever written to them.
+# Reference servers -- the EXISTING known-good pair the new servers must match.
+# 'capture' reads their config; 'parity' diffs the new hosts against it. Both
+# are read-only; nothing is ever written to these boxes.
 #
-# List the working pair, most-authoritative first. If the two disagree, parity
-# says so rather than silently cloning whichever came first.
-# ---------------------------------------------------------------------------
-LINE2_REFERENCE_NODES="TODO TODO"   # e.g. "10.20.30.11 10.20.30.12"
-NASH_REFERENCE_NODES="TODO TODO"
-
-# ---------------------------------------------------------------------------
-# Sites. Add one block per site. SITES lists which blocks are active.
+# kjv2 is currently down. Capture whatever is reachable -- one healthy
+# reference is enough to clone from, and parity will simply skip the absent one.
 # ---------------------------------------------------------------------------
 SITES=(line2 nash)
 
-# ---- Line 2 ---------------------------------------------------------------
-# Two Proxmox hosts in one cluster + a QDevice on the NAS for the third vote.
+LINE2_REFERENCE_NODES="TODO"      # e.g. "192.168.50.110"  (kjv1)
+NASH_REFERENCE_NODES="TODO"
+
+# ---------------------------------------------------------------------------
+# Line 2
+# ---------------------------------------------------------------------------
 LINE2_CLUSTER_NAME="ctm-line2"
 LINE2_NODES=(line2-pve1 line2-pve2)
 
-LINE2_PVE1_ADDR="TODO"          # mgmt IP of node 1, e.g. 10.20.30.11
-LINE2_PVE2_ADDR="TODO"          # mgmt IP of node 2
-LINE2_PVE1_RING0="TODO"         # corosync ring0 IP on node 1 (dedicated NIC if you have one)
-LINE2_PVE2_RING0="TODO"
+LINE2_PVE1_ADDR="TODO"            # mgmt IP of node 1 (reachable from here now)
+LINE2_PVE2_ADDR="TODO"
+LINE2_PVE1_RING0="TODO"           # corosync ring0. kjv uses the 192.168.100.0/24
+LINE2_PVE2_RING0="TODO"           # bridge for this -- keep it off the panel VLAN.
 
-LINE2_QDEVICE_ADDR="TODO"       # NAS IP running corosync-qnetd
-LINE2_QDEVICE_USER="root"       # qnetd host login used once during setup
+LINE2_QDEVICE_ADDR="TODO"         # host running corosync-qnetd (see STAGING.md --
+LINE2_QDEVICE_USER="root"         # on a Synology this is a Debian container, not DSM)
 
-LINE2_MGMT_CIDR="TODO"          # e.g. 10.20.30.0/24
-LINE2_MGMT_GW="TODO"
-LINE2_MGMT_IFACE="TODO"         # physical NIC for vmbr0, e.g. eno1  (preflight prints candidates)
-
-LINE2_PANEL_CIDR="192.168.50.0/24"
-LINE2_PANEL_IFACE="TODO"        # physical NIC for vmbr1 (panel VLAN), e.g. eno2
-LINE2_PANEL_VLAN=""             # VLAN tag, or "" if the panel NIC is untagged/access
-
-LINE2_CTM_SERVER_IP="192.168.50.129"
-LINE2_NTP_SERVERS="TODO"        # air-gapped: your local NTP/PTP source, space separated
 LINE2_TIMEZONE="America/Chicago"
+LINE2_NTP_SERVERS="TODO"          # air-gapped: your local time source
 
-LINE2_NAS_STORAGE_HOST="TODO"   # NAS IP serving NFS to the cluster
-LINE2_NAS_STORAGE_EXPORT="TODO" # e.g. /mnt/pool0/ctm-line2
-LINE2_NAS_STORAGE_ID="nas-line2"
+# --- Bridges: bridge|iface|cidr|gateway|comment ------------------------------
+# Mirrors kjv1's layout. Interface names are MAC-derived (enx*) and therefore
+# DIFFERENT on every machine -- run preflight on each host to get its real
+# names, then fill them in per node. Leave cidr empty for an unnumbered bridge.
+#
+# vmbr0 already exists from the PVE installer; it is listed for documentation
+# and deliberately skipped rather than edited.
+# Bridge specs are PER NODE. Each host has its own address on every bridge,
+# and enx* NIC names are MAC-derived so they differ even between identical
+# machines -- run preflight on each host to read its real names.
+LINE2_PVE1_BRIDGES="
+vmbr0|TODO|TODO|
+|mgmt + corosync (kjv1: 192.168.100.0/24, no gateway)
+vmbr1|TODO|TODO|TODO|panel VLAN -- kiosks live here (kjv1: 192.168.50.0/24, gw .1)
+vmbr2|TODO|TODO|
+|third network (kjv1: 192.168.12.0/24, no gateway)
+"
 
-# ---- Nash -----------------------------------------------------------------
+LINE2_PVE2_BRIDGES="
+vmbr0|TODO|TODO|
+|mgmt + corosync
+vmbr1|TODO|TODO|TODO|panel VLAN
+vmbr2|TODO|TODO|
+|third network
+"
+
+# --- Storage: type|id|server|path|content|extra ------------------------------
+# type  nfs | cifs | iscsi | lvm
+# path  nfs: export   cifs: share   iscsi: target IQN   lvm: vgname
+#
+# Mirrors the kjv cluster: three Synology NFS stores plus one iSCSI LUN.
+# Confirm the real export paths, target IQN and content types from a capture of
+# kjv1 before running -- the values below are the shape, not verified strings.
+LINE2_STORAGE="
+nfs|ds923-backups|TODO|TODO|backup|--options vers=4.1
+nfs|ds923-iso|TODO|TODO|iso,vztmpl|--options vers=4.1
+nfs|ds923-vm-disks|TODO|TODO|images,rootdir|--options vers=4.1
+iscsi|ContinuumTMLUN01|TODO|TODO|none|
+"
+
+# ---------------------------------------------------------------------------
+# Nash
+# ---------------------------------------------------------------------------
 NASH_CLUSTER_NAME="ctm-nash"
 NASH_NODES=(nash-pve1 nash-pve2)
 
@@ -70,31 +94,44 @@ NASH_PVE2_RING0="TODO"
 NASH_QDEVICE_ADDR="TODO"
 NASH_QDEVICE_USER="root"
 
-NASH_MGMT_CIDR="TODO"
-NASH_MGMT_GW="TODO"
-NASH_MGMT_IFACE="TODO"
-
-NASH_PANEL_CIDR="192.168.50.0/24"
-NASH_PANEL_IFACE="TODO"
-NASH_PANEL_VLAN=""
-
-NASH_CTM_SERVER_IP="192.168.50.129"
-NASH_NTP_SERVERS="TODO"
 NASH_TIMEZONE="America/Chicago"
+NASH_NTP_SERVERS="TODO"
 
-NASH_NAS_STORAGE_HOST="TODO"
-NASH_NAS_STORAGE_EXPORT="TODO"
-NASH_NAS_STORAGE_ID="nas-nash"
+# Bridge specs are PER NODE. Each host has its own address on every bridge,
+# and enx* NIC names are MAC-derived so they differ even between identical
+# machines -- run preflight on each host to read its real names.
+NASH_PVE1_BRIDGES="
+vmbr0|TODO|TODO|
+|mgmt + corosync (kjv1: 192.168.100.0/24, no gateway)
+vmbr1|TODO|TODO|TODO|panel VLAN -- kiosks live here (kjv1: 192.168.50.0/24, gw .1)
+vmbr2|TODO|TODO|
+|third network (kjv1: 192.168.12.0/24, no gateway)
+"
+
+NASH_PVE2_BRIDGES="
+vmbr0|TODO|TODO|
+|mgmt + corosync
+vmbr1|TODO|TODO|TODO|panel VLAN
+vmbr2|TODO|TODO|
+|third network
+"
+
+NASH_STORAGE="
+nfs|ds923-backups|TODO|TODO|backup|--options vers=4.1
+nfs|ds923-iso|TODO|TODO|iso,vztmpl|--options vers=4.1
+nfs|ds923-vm-disks|TODO|TODO|images,rootdir|--options vers=4.1
+iscsi|ContinuumTMLUN01|TODO|TODO|none|
+"
 
 # ---------------------------------------------------------------------------
-# Air-gap staging. See offline/STAGING.md.
+# Air-gap staging -- see offline/STAGING.md.
+# Build the bundle on a host running the SAME PVE version as the targets.
+# The existing cluster runs PVE 9.1.1 (Debian 13 base).
 # ---------------------------------------------------------------------------
-# Path ON EACH PVE HOST where the offline bundle has been unpacked. The
-# post-install script builds a local apt repo from here instead of reaching
-# out to enterprise.proxmox.com.
 OFFLINE_BUNDLE_PATH="/opt/ctm-offline"
 
-# SSH identity used to reach every host. Key auth only -- password auth is
-# rejected by preflight, because these runs are unattended.
+# SSH identity for every host. Key auth only -- password auth is rejected,
+# because postinstall disables it and these runs are unattended. Seed the key
+# on each host BEFORE the first postinstall run.
 SSH_KEY="${HOME}/.ssh/id_ed25519_ctm"
 SSH_USER="root"

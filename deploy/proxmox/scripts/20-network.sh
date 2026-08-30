@@ -1,65 +1,94 @@
-#!/usr/bin/env bash
-# Runs ON a Proxmox host. Adds the panel-VLAN bridge (vmbr1) that the kiosks
-# live on. Deliberately NEVER touches vmbr0 -- that is the interface carrying
-# this SSH session, and a bad edit there strands the host on an OT network with
-# no remote console.
+# Runs ON a Proxmox host. Creates the bridge layout that mirrors kjv1.
 #
-# env in: PANEL_IFACE PANEL_VLAN PANEL_CIDR
+# Only ever ADDS bridges that do not exist. It never edits or removes an
+# existing one -- vmbr0 is created by the PVE installer and carries this SSH
+# session, and a bad edit there strands the host on an OT network with no
+# remote console. Same reason it refuses a NIC already enslaved elsewhere.
+#
+# env in: BRIDGES  -- newline-separated records, fields separated by |
+#           bridge|iface|cidr|gateway|comment
+#         gateway and comment may be empty. cidr may be empty for an
+#         unnumbered bridge (host takes no address on that network).
 set -euo pipefail
-
-# Remote scripts arrive via `ssh host "bash -s"`, a non-login shell whose PATH
-# is not guaranteed to include sbin -- where ip, pvecm, pvesm and pvesh all live.
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 say() { printf '  %s\n' "$*"; }
 
 IF=/etc/network/interfaces
-[[ -n "${PANEL_IFACE:-}" ]] || { say "PANEL_IFACE unset -- skipping"; exit 0; }
+[[ -n "${BRIDGES:-}" ]] || { say "BRIDGES unset -- nothing to do"; exit 0; }
+[[ -f "$IF" ]] || { say "ERROR: $IF missing"; exit 1; }
 
-# The physical NIC must exist and must not already be enslaved to vmbr0.
-[[ -e "/sys/class/net/${PANEL_IFACE}" ]] \
-  || { say "ERROR: ${PANEL_IFACE} is not a real interface on this host"; exit 1; }
+# Which physical NICs are already bridge-ports of something?
+enslaved() {
+  local nic="$1" b
+  for b in /sys/class/net/*/brif/"$nic"; do
+    [[ -e "$b" ]] && { basename "$(dirname "$(dirname "$b")")"; return 0; }
+  done
+  grep -qE "^[[:space:]]*bridge-ports.*\b${nic}\b" "$IF" && { echo "(in $IF)"; return 0; }
+  return 1
+}
 
-if awk '/^iface vmbr0/,/^$/' "$IF" | grep -qw "${PANEL_IFACE}"; then
-  say "ERROR: ${PANEL_IFACE} is a bridge-port of vmbr0 -- refusing to steal the mgmt NIC"
-  exit 1
-fi
+cp -n "$IF" "${IF}.pre-ctm" 2>/dev/null || true
+added=0
 
-if grep -q '^auto vmbr1' "$IF"; then
-  say "vmbr1 already defined -- leaving it alone"
+while IFS='|' read -r br iface cidr gw comment; do
+  [[ -z "${br// }" ]] && continue
+  [[ "$br" == \#* ]] && continue
+
+  if ip link show "$br" >/dev/null 2>&1 || grep -qE "^auto[[:space:]]+${br}\$" "$IF"; then
+    say "${br}: already defined -- left untouched"
+    continue
+  fi
+
+  [[ -n "$iface" ]] || { say "ERROR: ${br} has no interface specified"; exit 1; }
+
+  # The physical NIC must exist on THIS host. Names are MAC-derived on these
+  # boxes (enx*), so they differ per machine -- preflight prints the real ones.
+  if [[ ! -e "/sys/class/net/${iface}" ]]; then
+    say "ERROR: ${br}: interface '${iface}' does not exist on this host"
+    say "       run preflight to list this machine's NIC names (they are"
+    say "       MAC-derived and differ from the reference server)"
+    exit 1
+  fi
+
+  if owner="$(enslaved "$iface")"; then
+    say "ERROR: ${br}: ${iface} is already a bridge-port of ${owner} -- refusing"
+    exit 1
+  fi
+
+  {
+    echo ""
+    echo "# ${comment:-added by ctm-provision}"
+    echo "auto ${iface}"
+    echo "iface ${iface} inet manual"
+    echo ""
+    echo "auto ${br}"
+    if [[ -n "$cidr" ]]; then
+      echo "iface ${br} inet static"
+      echo "    address ${cidr}"
+      [[ -n "$gw" ]] && echo "    gateway ${gw}"
+    else
+      echo "iface ${br} inet manual"
+    fi
+    echo "    bridge-ports ${iface}"
+    echo "    bridge-stp off"
+    echo "    bridge-fd 0"
+  } >> "$IF"
+
+  say "${br}: added on ${iface}${cidr:+ (${cidr})}${gw:+ gw ${gw}}"
+  added=$((added+1))
+done <<< "$BRIDGES"
+
+if [[ "$added" -eq 0 ]]; then
+  say "no new bridges needed"
   exit 0
 fi
 
-cp -n "$IF" "${IF}.pre-ctm" 2>/dev/null || true
-
-port="$PANEL_IFACE"
-if [[ -n "${PANEL_VLAN:-}" ]]; then
-  port="${PANEL_IFACE}.${PANEL_VLAN}"
-  say "panel VLAN is tagged: bridge port ${port}"
-fi
-
-cat >> "$IF" <<EOF
-
-# --- panel VLAN, added by ctm-provision -----------------------------------
-# Bridge only: the Proxmox host takes no address on the panel network. Kiosk
-# traffic is the guests' business, and an unnumbered host cannot be reached
-# from the panel VLAN by anything that wanders onto it.
-auto ${port}
-iface ${port} inet manual
-
-auto vmbr1
-iface vmbr1 inet manual
-    bridge-ports ${port}
-    bridge-stp off
-    bridge-fd 0
-#   panel network: ${PANEL_CIDR:-unspecified}
-EOF
-say "appended vmbr1 (port ${port}) to ${IF}"
-
-# ifupdown2 can apply changes without dropping vmbr0. If it is not present,
-# stop short of a reboot-equivalent and make the operator do it at the console.
+# ifupdown2 applies changes without dropping vmbr0. Without it, stop short of
+# anything reboot-equivalent and make the operator apply it at the console.
 if command -v ifreload >/dev/null 2>&1; then
   if ifreload -a; then
-    say "network reloaded; vmbr1 is up"
+    say "network reloaded; ${added} bridge(s) up"
+    ip -br -4 addr show type bridge 2>/dev/null | sed 's/^/    /'
   else
     say "ERROR: ifreload failed -- restoring previous config"
     cp "${IF}.pre-ctm" "$IF"
@@ -68,5 +97,5 @@ if command -v ifreload >/dev/null 2>&1; then
   fi
 else
   say "NOTE: ifupdown2 absent. Config written but NOT applied."
-  say "      Apply it at the physical console with: systemctl restart networking"
+  say "      Apply at the physical console: systemctl restart networking"
 fi
