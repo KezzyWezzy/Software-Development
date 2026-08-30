@@ -15,6 +15,51 @@ Nothing here can run from a cloud session; the OT network is not routable from
 outside. That is also why every stage is idempotent: you will be re-running
 these at the terminal, on a laptop, probably twice.
 
+
+## Matching two new servers to the existing pair
+
+This is the common case: two servers are already running and correct, and two
+new ones have to end up identical to them. Treat that as a cloning problem —
+read the golden config off the working pair, then diff the new hosts against
+it — rather than re-deriving values by hand into the inventory.
+
+```bash
+# 1. Snapshot the known-good servers. Read-only; writes nothing to them.
+./bin/ctm-provision line2 capture
+
+# 2. Snapshot the new servers and diff them against that baseline.
+./bin/ctm-provision line2 parity
+```
+
+Set `*_REFERENCE_NODES` in the inventory to the existing pair, most
+authoritative first. If the two references disagree with each other, `parity`
+says so before cloning either — an ambiguous baseline is worth knowing about
+before you copy it onto two more machines.
+
+`parity` classifies every section three ways, so the report is about real
+divergence rather than noise:
+
+| Marker | Meaning |
+|---|---|
+| `[ ok ]` | matches |
+| `~ differs (expected)` | hostname, CPU/RAM, disks, live vote counts — never counted as drift |
+| `[DRIFT]` | a real difference, with a unified diff of exactly what |
+
+Sections that carry addressing — `/etc/network/interfaces`, `corosync.conf`,
+`storage.cfg` — are compared with IPs and node names masked, so a node having
+its own address is not flagged, but a changed bridge port or a missing storage
+definition still is.
+
+Then close each `[DRIFT]` with the stage that owns it (`postinstall` for repos,
+time and packages; `network` for bridges; `storage` for the NAS) and re-run
+`parity` until it comes back clean.
+
+### Captured files hold plant addressing
+
+`baseline/` is gitignored. Capture redacts anything matching
+`password|secret|token|key`, and never reads `/etc/pve/priv`, but the snapshots
+still contain your addressing and topology. Check one before sharing it.
+
 ## Prerequisites
 
 - Proxmox VE installed manually on both hosts at each site, reachable by IP.
@@ -52,6 +97,8 @@ Or stage by stage, which is what you want the first time through:
 
 | Stage | What it does | Risk |
 |---|---|---|
+| `capture` | Snapshots the reference servers into `baseline/`. Read-only. | none |
+| `parity` | Snapshots the new servers and diffs against the baseline. Read-only. | none |
 | `preflight` | Reads versions, NICs, storage, clock, bundle. Changes nothing. | none |
 | `postinstall` | Disables enterprise/internet repos, builds the local apt repo, sets timezone + NTP, installs baseline packages, enforces key-only SSH. | low |
 | `network` | Adds `vmbr1` for the panel VLAN. Never touches `vmbr0`. | medium — see below |

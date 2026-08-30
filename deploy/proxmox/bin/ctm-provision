@@ -7,6 +7,8 @@
 #   ctm-provision <site> <stage> [--dry-run] [--yes]
 #
 # Stages, in the order they must run:
+#   capture      snapshot the KNOWN-GOOD reference servers into baseline/
+#   parity       snapshot the new servers and diff them against that baseline
 #   preflight    read-only readiness check on every node
 #   postinstall  repos, time, packages, sshd  (per node)
 #   network      panel-VLAN bridge vmbr1      (per node)
@@ -21,6 +23,8 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=../lib/common.sh
 source "${HERE}/lib/common.sh"
+# shellcheck source=../lib/compare.sh
+source "${HERE}/lib/compare.sh"
 
 INV="${CTM_INVENTORY:-${HERE}/inventory/sites.sh}"
 [[ -f "$INV" ]] || die "no inventory at ${INV} -- copy inventory/sites.example.sh to inventory/sites.sh and fill it in"
@@ -165,7 +169,93 @@ stage_storage() {
   ok "storage attached"
 }
 
+
+# --------------------------------------------------------------------------
+# Parity stages. "Match the existing servers" is a cloning problem, not a
+# greenfield one: capture the golden config off the working pair, then diff the
+# new hosts against it. Both stages are read-only on every host they touch.
+# --------------------------------------------------------------------------
+BASELINE_DIR="${HERE}/baseline"
+
+stage_capture() {
+  step "capture baseline -- ${SITE}"
+  local refs r name out
+  refs="$(var "$SITE" REFERENCE_NODES)"
+  [[ -n "$refs" ]] || die "inventory: $(upper "$SITE")_REFERENCE_NODES is not set -- \
+name the existing known-good servers to capture from"
+
+  mkdir -p "$BASELINE_DIR"
+  for r in $refs; do
+    name="$(printf '%s' "$r" | tr -c 'a-zA-Z0-9._-' '_')"
+    out="${BASELINE_DIR}/${SITE}-${name}.capture"
+    log "capturing ${r}"
+    if [[ "$DRY_RUN" == "1" ]]; then
+      printf '%s[dry-run]%s would capture %s -> %s\n' "$_c_dim" "$_c_off" "$r" "$out" >&2
+      continue
+    fi
+    # shellcheck disable=SC2046
+    ssh $(ssh_opts) "${SSH_USER}@${r}" "bash -s" \
+      < "${S}/01-capture.sh" > "${out}.tmp" \
+      || die "capture failed on ${r}"
+    mv "${out}.tmp" "$out"
+    ok "$(wc -l < "$out") lines -> ${out#"$HERE"/}"
+  done
+
+  warn "baseline files contain plant addressing -- they are gitignored; keep them that way"
+}
+
+stage_parity() {
+  step "parity check -- ${SITE}"
+  local refs base first candidates c name tmp rc=0
+  refs="$(var "$SITE" REFERENCE_NODES)"
+  first="$(printf '%s' "$refs" | awk '{print $1}')"
+  [[ -n "$first" ]] || die "inventory: $(upper "$SITE")_REFERENCE_NODES is not set"
+
+  base="${BASELINE_DIR}/${SITE}-$(printf '%s' "$first" | tr -c 'a-zA-Z0-9._-' '_').capture"
+  [[ -f "$base" ]] || die "no baseline at ${base#"$HERE"/} -- run the 'capture' stage first"
+
+  # If more than one reference was captured, the references should agree with
+  # each other. A split between them means the baseline itself is ambiguous.
+  local r rb
+  for r in $refs; do
+    [[ "$r" == "$first" ]] && continue
+    rb="${BASELINE_DIR}/${SITE}-$(printf '%s' "$r" | tr -c 'a-zA-Z0-9._-' '_').capture"
+    [[ -f "$rb" ]] || continue
+    log "reference cross-check: ${first} vs ${r}"
+    compare_captures "$base" "$rb" \
+      || warn "the two reference servers disagree -- decide which is authoritative before cloning"
+  done
+
+  candidates="$N1 $N2"
+  for c in $candidates; do
+    name="$(printf '%s' "$c" | tr -c 'a-zA-Z0-9._-' '_')"
+    step "candidate ${c} vs baseline ${first}"
+    if [[ "$DRY_RUN" == "1" ]]; then
+      printf '%s[dry-run]%s would capture and diff %s\n' "$_c_dim" "$_c_off" "$c" >&2
+      continue
+    fi
+    tmp="$(mktemp)"
+    # shellcheck disable=SC2046
+    ssh $(ssh_opts) "${SSH_USER}@${c}" "bash -s" < "${S}/01-capture.sh" > "$tmp" \
+      || die "capture failed on ${c}"
+    mkdir -p "${BASELINE_DIR}/candidates"
+    cp "$tmp" "${BASELINE_DIR}/candidates/${SITE}-${name}.capture"
+    compare_captures "$base" "$tmp" || rc=1
+    rm -f "$tmp"
+  done
+
+  if [[ $rc -eq 0 ]]; then
+    ok "both candidates match the baseline"
+  else
+    warn "drift found -- each [DRIFT] block above is a difference to close"
+    warn "run the matching stage (postinstall / network / storage) then re-check"
+  fi
+  return $rc
+}
+
 case "$STAGE" in
+  capture)     stage_capture ;;
+  parity)      stage_parity ;;
   preflight)   stage_preflight ;;
   postinstall) stage_postinstall ;;
   network)     stage_network ;;

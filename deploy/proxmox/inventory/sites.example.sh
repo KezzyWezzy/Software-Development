@@ -12,6 +12,18 @@
 # Every value marked TODO must be replaced before any script will run; preflight
 # refuses to continue while a TODO remains.
 
+
+# ---------------------------------------------------------------------------
+# Reference servers -- the EXISTING, known-good pair the new servers must match.
+# The 'capture' stage reads their config; 'parity' diffs the new hosts against
+# it. Both are read-only on these boxes; nothing is ever written to them.
+#
+# List the working pair, most-authoritative first. If the two disagree, parity
+# says so rather than silently cloning whichever came first.
+# ---------------------------------------------------------------------------
+LINE2_REFERENCE_NODES="TODO TODO"   # e.g. "10.20.30.11 10.20.30.12"
+NASH_REFERENCE_NODES="TODO TODO"
+
 # ---------------------------------------------------------------------------
 # Sites. Add one block per site. SITES lists which blocks are active.
 # ---------------------------------------------------------------------------
