@@ -45,10 +45,15 @@ divergence rather than noise:
 | `~ differs (expected)` | hostname, CPU/RAM, disks, live vote counts — never counted as drift |
 | `[DRIFT]` | a real difference, with a unified diff of exactly what |
 
-Sections that carry addressing — `/etc/network/interfaces`, `corosync.conf`,
-`storage.cfg` — are compared with IPs and node names masked, so a node having
-its own address is not flagged, but a changed bridge port or a missing storage
-definition still is.
+Sections that carry identifiers — `/etc/network/interfaces`, `corosync.conf`,
+`storage.cfg`, the HA config — are compared with IPs, node names, cluster name
+and HA group name masked. This matters because a new site forms its **own**
+cluster: its cluster name, node names and group name are all legitimately
+different from the reference, while the shape must match exactly. So a new
+two-node cluster with a QDevice and a `nofailback` group passes clean no matter
+what it is called, but a missing QDevice, a missing `nofailback`, a single-node
+cluster, a changed bridge port or a missing storage definition are all still
+reported as drift.
 
 Then close each `[DRIFT]` with the stage that owns it (`postinstall` for repos,
 time and packages; `network` for bridges; `storage` for the NAS) and re-run

@@ -6,15 +6,26 @@
 # Reported, but never counted as drift.
 _expected_diff_re='^(identity|cpu and memory class|block devices and pools|quorum)'
 
-# Sections where addressing differs by design but STRUCTURE must match.
-# Compared with host addresses masked.
-_addr_sensitive_re='^(/etc/network/interfaces|cluster|storage configuration)'
+# Sections where identifiers differ by design but STRUCTURE must match.
+# Compared with addresses and names masked. 'cluster' and 'ha configuration'
+# belong here because a new site forms its OWN cluster: the cluster name, node
+# names and HA group name are all legitimately different from the reference,
+# while the shape -- two nodes, one ring, a qdevice, a group with a preferred
+# node and nofailback -- is exactly what must match.
+_addr_sensitive_re='^(/etc/network/interfaces|cluster|storage configuration|ha configuration|quorum)'
 
 # Replace IPv4 addresses and hostnames with placeholders so that a structural
 # comparison is not swamped by every host having its own address.
 _mask_addrs() {
-  sed -E -e 's/\b([0-9]{1,3}\.){3}[0-9]{1,3}\b/<IP>/g' \
-         -e 's/\b(pve|node)[0-9]+\b/<NODE>/g'
+  sed -E \
+    -e 's/\b([0-9]{1,3}\.){3}[0-9]{1,3}\b/<IP>/g' \
+    -e 's/^([[:space:]]*cluster_name:[[:space:]]*).*/\1<CLUSTER>/' \
+    -e 's/^([[:space:]]*name:[[:space:]]*).*/\1<NODE>/' \
+    -e 's/^([[:space:]]*ring0_addr:[[:space:]]*).*/\1<IP>/' \
+    -e 's/^(group:[[:space:]]*).*/\1<GROUP>/' \
+    -e 's/^([[:space:]]*nodes[[:space:]]+).*/\1<NODES>/' \
+    -e 's/\b(pve|node)[0-9]+\b/<NODE>/g' \
+    -e 's/Membership information.*/Membership information/'
 }
 
 # _split_sections FILE OUTDIR -- one file per '##### ' section, numbered so
