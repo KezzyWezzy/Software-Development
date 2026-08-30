@@ -1,0 +1,2 @@
+# Plant addressing — never commit real site inventory
+deploy/proxmox/inventory/sites.sh

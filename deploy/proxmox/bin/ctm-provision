@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# CTM Proxmox provisioning driver.
+#
+# Runs on a CONTROL machine that can reach the Proxmox hosts over SSH -- your
+# laptop or a jump box on the plant network. It never runs on the hosts.
+#
+#   ctm-provision <site> <stage> [--dry-run] [--yes]
+#
+# Stages, in the order they must run:
+#   preflight    read-only readiness check on every node
+#   postinstall  repos, time, packages, sshd  (per node)
+#   network      panel-VLAN bridge vmbr1      (per node)
+#   cluster      create on node1, join node2
+#   qdevice      qnetd on the NAS + register with the cluster
+#   ha           HA group covering both nodes
+#   storage      attach the NAS as shared storage
+#   all          every stage above, in order
+#
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=../lib/common.sh
+source "${HERE}/lib/common.sh"
+
+INV="${CTM_INVENTORY:-${HERE}/inventory/sites.sh}"
+[[ -f "$INV" ]] || die "no inventory at ${INV} -- copy inventory/sites.example.sh to inventory/sites.sh and fill it in"
+# shellcheck source=/dev/null
+source "$INV"
+
+SITE="${1:-}"; STAGE="${2:-}"; shift 2 2>/dev/null || true
+for a in "$@"; do
+  case "$a" in
+    --dry-run) DRY_RUN=1 ;;
+    --yes)     ASSUME_YES=1 ;;
+    *) die "unknown option: $a" ;;
+  esac
+done
+export DRY_RUN ASSUME_YES="${ASSUME_YES:-0}"
+
+[[ -n "$SITE"  ]] || die "usage: ctm-provision <site> <stage> [--dry-run] [--yes]"
+[[ -n "$STAGE" ]] || die "usage: ctm-provision <site> <stage> [--dry-run] [--yes]"
+
+printf '%s\n' "${SITES[@]}" | grep -qx "$SITE" \
+  || die "site '${SITE}' is not in SITES (${SITES[*]})"
+
+[[ -f "$SSH_KEY" ]] || die "SSH key not found: ${SSH_KEY}"
+
+N1="$(require_var "$SITE" PVE1_ADDR)"
+N2="$(require_var "$SITE" PVE2_ADDR)"
+S="${HERE}/scripts"
+
+# --------------------------------------------------------------------------
+stage_preflight() {
+  step "preflight -- ${SITE}"
+  local host rc=0
+  for host in "$N1" "$N2"; do
+    rsh_script "$host" "${S}/00-preflight.sh" \
+      "EXPECT_PANEL_CIDR=$(var "$SITE" PANEL_CIDR)" \
+      "OFFLINE_BUNDLE_PATH=${OFFLINE_BUNDLE_PATH}" || rc=1
+  done
+  [[ $rc -eq 0 ]] || die "preflight failed -- fix the items above before continuing"
+  ok "both nodes ready"
+}
+
+stage_postinstall() {
+  step "post-install -- ${SITE}"
+  local host
+  for host in "$N1" "$N2"; do
+    log "post-install on ${host}"
+    rsh_script "$host" "${S}/10-pve-postinstall.sh" \
+      "TIMEZONE=$(require_var "$SITE" TIMEZONE)" \
+      "NTP_SERVERS=$(require_var "$SITE" NTP_SERVERS)" \
+      "OFFLINE_BUNDLE_PATH=${OFFLINE_BUNDLE_PATH}"
+  done
+  ok "post-install done"
+}
+
+stage_network() {
+  step "panel-VLAN bridge -- ${SITE}"
+  warn "this edits /etc/network/interfaces; vmbr0 (your SSH path) is never touched"
+  confirm "proceed with network changes on ${SITE}?" || die "aborted"
+  local host
+  for host in "$N1" "$N2"; do
+    log "vmbr1 on ${host}"
+    rsh_script "$host" "${S}/20-network.sh" \
+      "PANEL_IFACE=$(require_var "$SITE" PANEL_IFACE)" \
+      "PANEL_VLAN=$(var "$SITE" PANEL_VLAN)" \
+      "PANEL_CIDR=$(var "$SITE" PANEL_CIDR)"
+  done
+  ok "panel bridge configured"
+}
+
+# pvecm add --use_ssh needs node2 -> node1 root SSH. Password auth is off by
+# then, so seed the keys here rather than leaving it to an interactive prompt.
+exchange_root_keys() {
+  log "exchanging root SSH keys between nodes"
+  local a b key
+  for pair in "$N1 $N2" "$N2 $N1"; do
+    read -r a b <<<"$pair"
+    rsh "$a" "test -f /root/.ssh/id_rsa || ssh-keygen -q -t rsa -b 3072 -N '' -f /root/.ssh/id_rsa"
+    key="$(rsh "$a" "cat /root/.ssh/id_rsa.pub")"
+    [[ -n "$key" || "$DRY_RUN" == "1" ]] || die "could not read root pubkey from ${a}"
+    # Braces matter: without them the trailing || also fires when an earlier
+    # command in the && chain fails, appending the key to a directory that was
+    # never set up.
+    rsh "$b" "set -e
+              mkdir -p /root/.ssh && chmod 700 /root/.ssh
+              touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys
+              if ! grep -qxF '${key}' /root/.ssh/authorized_keys; then
+                echo '${key}' >> /root/.ssh/authorized_keys
+              fi"
+  done
+  ok "root keys exchanged"
+}
+
+stage_cluster() {
+  step "cluster -- ${SITE}"
+  local name r1 r2
+  name="$(require_var "$SITE" CLUSTER_NAME)"
+  r1="$(require_var "$SITE" PVE1_RING0)"
+  r2="$(require_var "$SITE" PVE2_RING0)"
+
+  warn "joining REPLACES node 2's /etc/pve with the cluster copy"
+  confirm "create cluster '${name}' and join ${N2} to it?" || die "aborted"
+
+  exchange_root_keys
+
+  log "creating cluster on ${N1}"
+  rsh_script "$N1" "${S}/40-cluster-create.sh" "CLUSTER_NAME=${name}" "RING0_ADDR=${r1}"
+
+  log "joining ${N2}"
+  rsh_script "$N2" "${S}/41-cluster-join.sh" "PEER_RING0=${r1}" "RING0_ADDR=${r2}"
+  ok "cluster '${name}' formed"
+}
+
+stage_qdevice() {
+  step "QDevice -- ${SITE}"
+  local qaddr quser
+  qaddr="$(require_var "$SITE" QDEVICE_ADDR)"
+  quser="$(var "$SITE" QDEVICE_USER)"
+
+  log "installing qnetd on ${qaddr}"
+  SSH_USER="${quser:-root}" rsh_script "$qaddr" "${S}/50-qdevice-qnetd.sh"
+
+  log "registering QDevice with the cluster"
+  rsh_script "$N1" "${S}/51-qdevice-setup.sh" "QDEVICE_ADDR=${qaddr}"
+  ok "QDevice active -- cluster now has 3 votes"
+}
+
+stage_ha() {
+  step "HA group -- ${SITE}"
+  rsh_script "$N1" "${S}/60-ha.sh" \
+    "NODE1=$(site_nodes "$SITE" | sed -n 1p)" \
+    "NODE2=$(site_nodes "$SITE" | sed -n 2p)" \
+    "SITE=${SITE}"
+  ok "HA group configured"
+}
+
+stage_storage() {
+  step "NAS storage -- ${SITE}"
+  rsh_script "$N1" "${S}/30-storage.sh" \
+    "NAS_STORAGE_ID=$(require_var "$SITE" NAS_STORAGE_ID)" \
+    "NAS_STORAGE_HOST=$(require_var "$SITE" NAS_STORAGE_HOST)" \
+    "NAS_STORAGE_EXPORT=$(require_var "$SITE" NAS_STORAGE_EXPORT)"
+  ok "storage attached"
+}
+
+case "$STAGE" in
+  preflight)   stage_preflight ;;
+  postinstall) stage_postinstall ;;
+  network)     stage_network ;;
+  cluster)     stage_cluster ;;
+  qdevice)     stage_qdevice ;;
+  ha)          stage_ha ;;
+  storage)     stage_storage ;;
+  all)
+    stage_preflight; stage_postinstall; stage_network
+    stage_cluster;   stage_qdevice;     stage_storage; stage_ha
+    ok "site ${SITE} fully provisioned"
+    ;;
+  *) die "unknown stage '${STAGE}'" ;;
+esac
