@@ -214,171 +214,179 @@ $destRoot   = [System.IO.Path]::GetPathRoot($OutputPath)
 $isUnc      = $OutputPath.StartsWith('\\')
 Write-Ok "Destination: $OutputPath"
 
-# Volume selection
-$captureList = @()
-switch -Regex ($Volumes) {
-    '^\*$' {
-        $captureList = @('*')
-        Write-Warn 'Capturing ALL volumes on ALL disks - destination must be a network share or the capture will eat itself.'
-    }
-    '^auto$' {
-        $captureList += $sysDrive
-        if ($firmware -eq 'UEFI') {
-            $efi = Mount-EfiPartition
-            if ($efi) {
-                $captureList = @($efi) + $captureList
+# Everything below can leave state on the live machine - a lettered EFI partition, a
+# suspended BitLocker protector - so it all runs under the cleanup in `finally`.
+try {
+
+    # Volume selection
+    $captureList = @()
+    switch -Regex ($Volumes) {
+        '^\*$' {
+            $captureList = @('*')
+            Write-Warn 'Capturing ALL volumes on ALL disks - destination must be a network share or the capture will eat itself.'
+        }
+        '^auto$' {
+            $captureList += $sysDrive
+            if ($firmware -eq 'UEFI') {
+                $efi = Mount-EfiPartition
+                if ($efi) {
+                    $captureList = @($efi) + $captureList
+                } else {
+                    Write-Warn ('Could not letter the EFI System Partition. The image will contain ' +
+                                'Windows but no bootloader. Use the Disk2vhd GUI and tick the ' +
+                                'unlettered EFI volume by hand, or re-run with -Volumes ''*''.')
+                }
             } else {
-                Write-Warn ('Could not letter the EFI System Partition. The image will contain ' +
-                            'Windows but no bootloader. Use the Disk2vhd GUI and tick the ' +
-                            'unlettered EFI volume by hand, or re-run with -Volumes ''*''.')
+                Write-Warn ('Legacy BIOS boot: the active "System Reserved" partition usually has no ' +
+                            'drive letter. Use the Disk2vhd GUI and tick it, or -Volumes ''*''.')
             }
-        } else {
-            Write-Warn ('Legacy BIOS boot: the active "System Reserved" partition usually has no ' +
-                        'drive letter. Use the Disk2vhd GUI and tick it, or -Volumes ''*''.')
+        }
+        default {
+            $captureList = $Volumes -split '\s+' | Where-Object { $_ }
         }
     }
-    default {
-        $captureList = $Volumes -split '\s+' | Where-Object { $_ }
-    }
-}
-Write-Ok ("Volumes to capture: {0}" -f ($captureList -join ' '))
+    Write-Ok ("Volumes to capture: {0}" -f ($captureList -join ' '))
 
-# Destination must not be inside the capture set
-if ($captureList -contains '*' -and -not $isUnc) {
-    Write-Warn "-Volumes '*' with a local destination ($destRoot) - Disk2vhd will try to capture the drive it is writing to."
-}
-foreach ($v in $captureList) {
-    if ($v -ne '*' -and $destRoot -like "$v*") {
-        throw "Destination $OutputPath is on $v, which is being captured. Use a different drive."
+    # Destination must not be inside the capture set
+    if ($captureList -contains '*' -and -not $isUnc) {
+        Write-Warn "-Volumes '*' with a local destination ($destRoot) - Disk2vhd will try to capture the drive it is writing to."
     }
-}
-
-# Space
-$usedBytes = 0
-foreach ($v in $captureList) {
-    if ($v -eq '*') {
-        $usedBytes = (Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' |
-                      Measure-Object -Property @{ Expression = { $_.Size - $_.FreeSpace } } -Sum).Sum
-        break
+    foreach ($v in $captureList) {
+        if ($v -ne '*' -and $destRoot -like "$v*") {
+            throw "Destination $OutputPath is on $v, which is being captured. Use a different drive."
+        }
     }
-    $ld = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$v'" -ErrorAction SilentlyContinue
-    if ($ld) { $usedBytes += ($ld.Size - $ld.FreeSpace) }
-}
-$neededGB = [math]::Round(($usedBytes * 1.1) / 1GB, 1)
-Write-Ok "Estimated image size (used data + 10%): ${neededGB} GB"
 
-if (-not $isUnc) {
-    $destFreeGB = [math]::Round(
-        (Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$($destRoot.TrimEnd('\'))'").FreeSpace / 1GB, 1)
-    Write-Ok "Free space at destination: ${destFreeGB} GB"
-    if ($destFreeGB -lt $neededGB) {
-        throw "Not enough room: need ~${neededGB} GB, have ${destFreeGB} GB at $destRoot."
+    # Space
+    $usedBytes = 0
+    foreach ($v in $captureList) {
+        if ($v -eq '*') {
+            # Measure-Object -Property does not accept a hashtable calculated property,
+            # so project to the used-bytes figure first and sum that.
+            $usedBytes = (Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' |
+                          ForEach-Object { $_.Size - $_.FreeSpace } |
+                          Measure-Object -Sum).Sum
+            break
+        }
+        $ld = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$v'" -ErrorAction SilentlyContinue
+        if ($ld) { $usedBytes += ($ld.Size - $ld.FreeSpace) }
     }
-} else {
-    Write-Info 'Destination is a UNC path - free space not checked. Confirm the share has room.'
-}
+    $neededGB = [math]::Round(($usedBytes * 1.1) / 1GB, 1)
+    Write-Ok "Estimated image size (used data + 10%): ${neededGB} GB"
 
-# BitLocker
-$blVolumes = @()
-try {
-    $blVolumes = Get-BitLockerVolume -ErrorAction Stop |
-                 Where-Object { $_.ProtectionStatus -eq 'On' }
-} catch {
-    Write-Info 'BitLocker cmdlets unavailable (Home edition or feature absent) - assuming no encryption.'
-}
-if ($blVolumes.Count -gt 0) {
-    $names = ($blVolumes | ForEach-Object { $_.MountPoint }) -join ', '
-    if ($SkipBitLockerSuspend) {
-        Write-Warn "BitLocker ACTIVE on $names and -SkipBitLockerSuspend was passed. The image will not boot in a VM."
+    if (-not $isUnc) {
+        $destFreeGB = [math]::Round(
+            (Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$($destRoot.TrimEnd('\'))'").FreeSpace / 1GB, 1)
+        Write-Ok "Free space at destination: ${destFreeGB} GB"
+        if ($destFreeGB -lt $neededGB) {
+            throw "Not enough room: need ~${neededGB} GB, have ${destFreeGB} GB at $destRoot."
+        }
     } else {
-        Write-Warn "BitLocker active on $names - suspending (no reboot, resumed automatically at the end)."
+        Write-Info 'Destination is a UNC path - free space not checked. Confirm the share has room.'
     }
-} else {
-    Write-Ok 'No active BitLocker protection detected'
-}
 
-$disk2vhd = Resolve-Disk2vhd -Hint $Disk2vhdPath
-Write-Ok "Disk2vhd: $disk2vhd"
-
-$stamp     = Get-Date -Format 'yyyyMMdd-HHmmss'
-$imageName = ('{0}-{1}.vhdx' -f $env:COMPUTERNAME, $stamp)
-$imagePath = Join-Path $OutputPath $imageName
-
-# ------------------------------------------------------------------ capture --
-
-try {
-    if ($blVolumes.Count -gt 0 -and -not $SkipBitLockerSuspend) {
-        Write-Step 'Suspending BitLocker'
-        foreach ($bl in $blVolumes) {
-            # RebootCount 0 = stay suspended until explicitly resumed. Still no reboot.
-            Suspend-BitLocker -MountPoint $bl.MountPoint -RebootCount 0 | Out-Null
-            $script:SuspendedBitLocker += $bl.MountPoint
-            Write-Ok "Suspended on $($bl.MountPoint)"
+    # BitLocker
+    $blVolumes = @()
+    try {
+        # @(...) matters: a pipeline that matches nothing yields $null, and $null.Count
+        # is a terminating error under Set-StrictMode -Version Latest.
+        $blVolumes = @(Get-BitLockerVolume -ErrorAction Stop |
+                       Where-Object { $_.ProtectionStatus -eq 'On' })
+    } catch {
+        Write-Info 'BitLocker cmdlets unavailable (Home edition or feature absent) - assuming no encryption.'
+    }
+    if ($blVolumes.Count -gt 0) {
+        $names = ($blVolumes | ForEach-Object { $_.MountPoint }) -join ', '
+        if ($SkipBitLockerSuspend) {
+            Write-Warn "BitLocker ACTIVE on $names and -SkipBitLockerSuspend was passed. The image will not boot in a VM."
+        } else {
+            Write-Warn "BitLocker active on $names - suspending (no reboot, resumed automatically at the end)."
         }
+    } else {
+        Write-Ok 'No active BitLocker protection detected'
     }
 
-    Write-Step 'Writing manifest'
-    $manifest = [ordered]@{
-        schema           = 'p2v-windows/1'
-        capturedUtc      = (Get-Date).ToUniversalTime().ToString('o')
-        sourceComputer   = $env:COMPUTERNAME
-        image            = $imageName
-        firmware         = $firmware
-        requiresVtpm     = [bool]$isWin11
-        requiresSecureBoot = [bool]$isWin11
-        osCaption        = $os.Caption
-        osBuild          = $build
-        architecture     = $env:PROCESSOR_ARCHITECTURE
-        sourceCpuCount   = $cs.NumberOfLogicalProcessors
-        sourceMemoryGB   = [math]::Round($cs.TotalPhysicalMemory / 1GB)
-        volumes          = $captureList
-        estimatedSizeGB  = $neededGB
-        activationChannel = $activation
-        bitlockerSuspended = $script:SuspendedBitLocker
+    $disk2vhd = Resolve-Disk2vhd -Hint $Disk2vhdPath
+    Write-Ok "Disk2vhd: $disk2vhd"
+
+    $stamp     = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $imageName = ('{0}-{1}.vhdx' -f $env:COMPUTERNAME, $stamp)
+    $imagePath = Join-Path $OutputPath $imageName
+
+    # ------------------------------------------------------------------ capture --
+
+        if ($blVolumes.Count -gt 0 -and -not $SkipBitLockerSuspend) {
+            Write-Step 'Suspending BitLocker'
+            foreach ($bl in $blVolumes) {
+                # RebootCount 0 = stay suspended until explicitly resumed. Still no reboot.
+                Suspend-BitLocker -MountPoint $bl.MountPoint -RebootCount 0 | Out-Null
+                $script:SuspendedBitLocker += $bl.MountPoint
+                Write-Ok "Suspended on $($bl.MountPoint)"
+            }
+        }
+
+        Write-Step 'Writing manifest'
+        $manifest = [ordered]@{
+            schema           = 'p2v-windows/1'
+            capturedUtc      = (Get-Date).ToUniversalTime().ToString('o')
+            sourceComputer   = $env:COMPUTERNAME
+            image            = $imageName
+            firmware         = $firmware
+            requiresVtpm     = [bool]$isWin11
+            requiresSecureBoot = [bool]$isWin11
+            osCaption        = $os.Caption
+            osBuild          = $build
+            architecture     = $env:PROCESSOR_ARCHITECTURE
+            sourceCpuCount   = $cs.NumberOfLogicalProcessors
+            sourceMemoryGB   = [math]::Round($cs.TotalPhysicalMemory / 1GB)
+            volumes          = $captureList
+            estimatedSizeGB  = $neededGB
+            activationChannel = $activation
+            bitlockerSuspended = $script:SuspendedBitLocker
+        }
+        $manifestPath = Join-Path $OutputPath ('manifest-{0}.json' -f $stamp)
+        $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path $manifestPath -Encoding UTF8
+        Write-Ok "manifest -> $manifestPath"
+
+        if ($DryRun) {
+            Write-Step 'Dry run - stopping before capture'
+            Write-Info "Would run: `"$disk2vhd`" -accepteula -x $($captureList -join ' ') `"$imagePath`""
+            return
+        }
+
+        Write-Step "Capturing to $imagePath"
+        Write-Info 'The PC stays usable. Expect roughly 1-3 GB/min depending on the destination.'
+
+        # -x selects VHDX. Older Disk2vhd builds infer format from the extension instead, so
+        # fall back to the positional form if the switch is rejected.
+        $argsWithX = @('-accepteula', '-x') + $captureList + @($imagePath)
+        $argsPlain = @('-accepteula')      + $captureList + @($imagePath)
+
+        $proc = Start-Process -FilePath $disk2vhd -ArgumentList $argsWithX -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -ne 0) {
+            Write-Warn "Disk2vhd exited $($proc.ExitCode) with -x; retrying without it."
+            $proc = Start-Process -FilePath $disk2vhd -ArgumentList $argsPlain -NoNewWindow -Wait -PassThru
+        }
+        if ($proc.ExitCode -ne 0) {
+            throw ("Disk2vhd failed with exit code {0}. Run it interactively (GUI) to see the error; " +
+                   "tick 'Use Vhdx' and 'Use Volume Shadow Copy'." -f $proc.ExitCode)
+        }
+
+        if (-not (Test-Path $imagePath)) {
+            $produced = Get-ChildItem $OutputPath -Filter "$($env:COMPUTERNAME)-$stamp*" |
+                        Select-Object -ExpandProperty Name
+            throw ("Disk2vhd reported success but $imageName is missing. Files present: " +
+                   ($produced -join ', '))
+        }
+
+        $sizeGB = [math]::Round((Get-Item $imagePath).Length / 1GB, 1)
+        Write-Step 'Capture complete'
+        Write-Ok "$imagePath (${sizeGB} GB)"
+        Write-Info ''
+        Write-Info 'Next: copy the image + manifest to the machine that will host the VM, then run'
+        Write-Info '  ./convert-image.sh <image.vhdx> --format qcow2|vmdk'
+        Write-Info 'See README.md for the per-hypervisor VM settings and the Apple Silicon caveat.'
     }
-    $manifestPath = Join-Path $OutputPath ('manifest-{0}.json' -f $stamp)
-    $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path $manifestPath -Encoding UTF8
-    Write-Ok "manifest -> $manifestPath"
-
-    if ($DryRun) {
-        Write-Step 'Dry run - stopping before capture'
-        Write-Info "Would run: `"$disk2vhd`" -accepteula -x $($captureList -join ' ') `"$imagePath`""
-        return
-    }
-
-    Write-Step "Capturing to $imagePath"
-    Write-Info 'The PC stays usable. Expect roughly 1-3 GB/min depending on the destination.'
-
-    # -x selects VHDX. Older Disk2vhd builds infer format from the extension instead, so
-    # fall back to the positional form if the switch is rejected.
-    $argsWithX = @('-accepteula', '-x') + $captureList + @($imagePath)
-    $argsPlain = @('-accepteula')      + $captureList + @($imagePath)
-
-    $proc = Start-Process -FilePath $disk2vhd -ArgumentList $argsWithX -NoNewWindow -Wait -PassThru
-    if ($proc.ExitCode -ne 0) {
-        Write-Warn "Disk2vhd exited $($proc.ExitCode) with -x; retrying without it."
-        $proc = Start-Process -FilePath $disk2vhd -ArgumentList $argsPlain -NoNewWindow -Wait -PassThru
-    }
-    if ($proc.ExitCode -ne 0) {
-        throw ("Disk2vhd failed with exit code {0}. Run it interactively (GUI) to see the error; " +
-               "tick 'Use Vhdx' and 'Use Volume Shadow Copy'." -f $proc.ExitCode)
-    }
-
-    if (-not (Test-Path $imagePath)) {
-        $produced = Get-ChildItem $OutputPath -Filter "$($env:COMPUTERNAME)-$stamp*" |
-                    Select-Object -ExpandProperty Name
-        throw ("Disk2vhd reported success but $imageName is missing. Files present: " +
-               ($produced -join ', '))
-    }
-
-    $sizeGB = [math]::Round((Get-Item $imagePath).Length / 1GB, 1)
-    Write-Step 'Capture complete'
-    Write-Ok "$imagePath (${sizeGB} GB)"
-    Write-Info ''
-    Write-Info 'Next: copy the image + manifest to the machine that will host the VM, then run'
-    Write-Info '  ./convert-image.sh <image.vhdx> --format qcow2|vmdk'
-    Write-Info 'See README.md for the per-hypervisor VM settings and the Apple Silicon caveat.'
-}
 finally {
     Write-Step 'Cleanup'
     Dismount-EfiPartition

@@ -157,9 +157,39 @@ the capture.
 
 ## Status
 
-`Capture-WindowsVM.ps1` was written against Disk2vhd 2.02 and has **not been executed on a
-Windows host** — there was no Windows machine available in the environment it was authored in.
-Run it with `-DryRun` first; the dry run exercises every preflight check and writes the
-manifest without touching the disks. `convert-image.sh` was tested for argument handling,
-manifest parsing, missing-key warnings, and the ARM-host guard, with `qemu-img` stubbed —
-the conversion itself has not been run against a real VHDX.
+### `Capture-WindowsVM.ps1`
+
+Written against Disk2vhd 2.02. **Never executed on a Windows host** — no Windows machine was
+available where it was authored. What *has* been done is a mocked dry run: `tests/Invoke-DryRunHarness.ps1`
+substitutes the Windows-only calls (`Get-CimInstance`, `Get-BitLockerVolume`, `bcdedit`,
+`mountvol`, `Get-Command`, the elevation check) and runs the real script under PowerShell 7 with
+`-DryRun` across ten scenario combinations — UEFI and BIOS, with and without BitLocker, EFI
+lettering succeeding and failing, `auto` and `*` volume modes, and an out-of-space failure.
+
+```bash
+pwsh -File tests/Invoke-DryRunHarness.ps1 -Scenario uefi-win11+bl
+pwsh -File tests/Invoke-DryRunHarness.ps1 -Scenario bios-plain -Star
+```
+
+That found and fixed three real defects:
+
+| Defect | Effect |
+|---|---|
+| `try`/`finally` opened after the EFI partition was lettered | A preflight failure (out of space, bad destination) left the EFI System Partition mounted as `S:` on the live machine |
+| `Measure-Object -Property @{Expression=…}` | `-Volumes '*'` crashed on every run — a hashtable calculated property is not a valid `-Property` argument |
+| `Get-BitLockerVolume \| Where-Object` yields `$null`, not `@()`, when nothing matches | `$null.Count` is a terminating error under `Set-StrictMode -Version Latest`, so the script died on any PC **without** BitLocker — the common case |
+
+The harness proves control flow, arithmetic, StrictMode compliance, manifest contents, and that
+cleanup runs on every exit path. It proves **nothing about Windows behaviour**: VSS, the real
+`mountvol`/`bcdedit`/Disk2vhd, and Windows path semantics are all mocked. The
+destination-on-a-captured-volume check specifically cannot be exercised there, because a Linux
+path root is `/` and never a drive letter.
+
+So: still run it with `-DryRun` on the real machine first. The dry run performs every preflight
+check and writes the manifest without reading or writing a single disk block.
+
+### `convert-image.sh`
+
+Argument handling, manifest parsing, per-key missing-value warnings, the no-manifest fallback and
+the ARM-host guard were all exercised, with `qemu-img` stubbed. The conversion itself has not been
+run against a real VHDX — `qemu-img` was not installable in the authoring environment.
