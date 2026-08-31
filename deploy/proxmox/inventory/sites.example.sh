@@ -58,7 +58,7 @@ RRSOUTH_NTP_SERVERS="TODO"          # air-gapped: your local time source
 # machines -- run preflight on each host to read its real names.
 RRSOUTH_PVE1_BRIDGES="
 vmbr0|TODO|TODO|
-|mgmt + corosync -- 192.168.100.0/24, SAME as existing, no gateway
+|mgmt + corosync -- 192.168.100.0/24 SHARED L2 with North; use .100-.199
 vmbr1|TODO|TODO|TODO|panel VLAN -- NEW SITE USES 192.168.51.0/24, gw .51.1
 vmbr2|TODO|TODO|
 |third network (kjv1: 192.168.12.0/24, no gateway)

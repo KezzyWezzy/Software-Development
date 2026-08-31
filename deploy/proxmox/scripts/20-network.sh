@@ -5,6 +5,13 @@
 # session, and a bad edit there strands the host on an OT network with no
 # remote console. Same reason it refuses a NIC already enslaved elsewhere.
 #
+# Before assigning any address it probes the segment with arping -D (duplicate
+# address detection). On a shared Layer 2 domain -- which Red River South is,
+# since it reaches North at L2 -- two terminals share one broadcast domain, so
+# a planned address that another host already owns is an ARP conflict, not a
+# routing problem. Cheaper to refuse here than to debug intermittent loss of a
+# Proxmox node later.
+#
 # env in: BRIDGES  -- newline-separated records, fields separated by |
 #           bridge|iface|cidr|gateway|comment
 #         gateway and comment may be empty. cidr may be empty for an
@@ -25,6 +32,34 @@ enslaved() {
   done
   grep -qE "^[[:space:]]*bridge-ports.*\b${nic}\b" "$IF" && { echo "(in $IF)"; return 0; }
   return 1
+}
+
+# addr_in_use IFACE CIDR -- true if some other host already answers for it.
+# Returns 2 when the check could not run, so the caller can warn rather than
+# wrongly claim the address is free.
+addr_in_use() {
+  local iface="$1" addr="${2%%/*}" was_down=0 rc
+
+  command -v arping >/dev/null 2>&1 || return 2
+
+  # arping needs the link up to hear a reply. Bring it up if needed and put it
+  # back afterwards -- the bridge is not configured yet, so this is harmless.
+  if [[ "$(cat "/sys/class/net/${iface}/operstate" 2>/dev/null)" != "up" ]]; then
+    ip link set "$iface" up 2>/dev/null || return 2
+    was_down=1
+    sleep 2
+  fi
+
+  # -D duplicate-address mode: exits non-zero if any host replies.
+  arping -D -q -c 2 -w 3 -I "$iface" "$addr" >/dev/null 2>&1
+  rc=$?
+
+  [[ "$was_down" == "1" ]] && ip link set "$iface" down 2>/dev/null
+
+  # arping -D: 0 = free, 1 = someone answered.
+  [[ $rc -eq 1 ]] && return 0
+  [[ $rc -eq 0 ]] && return 1
+  return 2
 }
 
 cp -n "$IF" "${IF}.pre-ctm" 2>/dev/null || true
@@ -53,6 +88,27 @@ while IFS='|' read -r br iface cidr gw comment; do
   if owner="$(enslaved "$iface")"; then
     say "ERROR: ${br}: ${iface} is already a bridge-port of ${owner} -- refusing"
     exit 1
+  fi
+
+  # Duplicate-address check before committing the address to config.
+  if [[ -n "$cidr" ]]; then
+    # Capture the status rather than testing $? inside elif, where an
+    # intervening command would silently change what is being tested.
+    # Under `set -e` a bare non-zero return aborts the script, so the status
+    # must be collected with || rather than read from $? afterwards.
+    dup_rc=0; addr_in_use "$iface" "$cidr" || dup_rc=$?
+    if [[ $dup_rc -eq 0 ]]; then
+      say "ERROR: ${br}: ${cidr%%/*} is ALREADY IN USE on the segment reachable"
+      say "       from ${iface}. North and South share this Layer 2 domain, so"
+      say "       every address must be unique across both terminals."
+      say "       Pick an address outside the other terminal's range and re-run."
+      exit 1
+    elif [[ $dup_rc -eq 2 ]]; then
+      say "${br}: WARNING -- could not verify ${cidr%%/*} is free (arping missing"
+      say "       or link unavailable). Confirm by hand before trusting this host."
+    else
+      say "${br}: ${cidr%%/*} is free on the segment"
+    fi
   fi
 
   {

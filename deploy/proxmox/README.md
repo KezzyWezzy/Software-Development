@@ -165,6 +165,12 @@ not exist — an existing `vmbr0` is skipped, never edited — and it refuses a 
 already enslaved elsewhere. It restores the previous `/etc/network/interfaces`
 if `ifreload` fails.
 
+**Addresses are duplicate-checked before assignment.** North and South share
+one Layer 2 domain on `192.168.100.0/24`, so every address must be unique across
+both terminals. The network stage runs `arping -D` first and refuses an address
+that already answers; if the check cannot run it says so rather than implying
+the address is free.
+
 **Bridge specs are per node, not per site.** Each host has its own address on
 every bridge, and `enx*` names are MAC-derived so they differ even between
 identical machines. `*_PVE1_BRIDGES` and `*_PVE2_BRIDGES` are separate for that

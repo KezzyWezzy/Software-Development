@@ -49,38 +49,68 @@ is not only a host-config change. For every kiosk at the new site:
 A wrong address here fails *silently* — which is exactly the class of fault that
 has already cost days on this system.
 
-## Keeping 192.168.100.0/24 identical — what has to be true
+## 192.168.100.0/24 is ONE network, not two copies
 
-Both clusters are at Red River: the existing kjv pair, and the new pair for
-South Terminal. Two clusters can carry the same subnet only if those segments
-are genuinely separate wires. Two facts decide it.
+South reaches North at **Layer 2**. That settles it: the two terminals are not
+two isolated segments that happen to use the same numbers — they share a single
+broadcast domain. `192.168.100.0/24` is one network with hosts at both ends.
 
-**The evidence in favour.** On kjv1, `vmbr0` holds `192.168.100.2/24` with **no
-gateway** *(observed)*. A segment with no gateway does not route anywhere, which
-is exactly what a private cluster-interconnect and storage link looks like. If
-South's `192.168.100.0/24` is likewise its own switch or VLAN with its own NAS
-on it, duplicating the subnet is fine and nothing crosses.
+South still gets its own NAS. That is a separate box on the same segment, at its
+own address — not a second `.20`.
 
-**What would break it.** If South must reach a NAS that lives on the *existing*
-`192.168.100.0/24` — a shared Synology, cross-site backups, one ISO store — it
-cannot. A host will never route to another terminal's `192.168.100.20` while its
-own interface owns that subnet; the traffic is delivered locally and never
-leaves. Same if the two terminals' management networks are ever trunked onto
-shared switching: duplicate subnets on one L2 domain is an address conflict, not
-a topology.
+**The consequence.** Every address must be unique across both terminals. Two
+NASes both at `.20`, or `kjv1` and `rrs-pve1` both at `.2`, is an ARP conflict:
+intermittent unreachability, traffic landing on the wrong host, and a fault that
+looks like failing hardware. This is now the highest-risk mistake in the build,
+which is why the network stage refuses to assign an address that already answers
+(see below).
 
-So the question to answer before building is narrow:
+### Allocation
 
-> **Does Red River South get its own NAS on its own `192.168.100.0/24`, or does
-> it use the existing one?**
+Split the host range so the two terminals cannot collide. Proposed:
 
-Its own → keep the subnet identical as directed, nothing more to do. Shared →
-the management network needs renumbering too, the same way the panel VLAN did
-(`192.168.100` → `192.168.101` keeps the rule consistent).
+| Range | Terminal | Notes |
+|---|---|---|
+| `.1` – `.99` | North (existing) | `kjv1` is `.2` *(observed)* |
+| `.100` – `.199` | **Red River South** | new hosts and South's NAS |
+| `.200` – `.254` | reserved | shared services, future |
 
-Nothing in the kit depends on the answer — both are one inventory value — but it
-is much cheaper to settle now than after both nodes are built and the NAS will
-not mount.
+Suggested South allocation, mirroring North's ordering:
+
+| Host | Address |
+|---|---|
+| `rrs-pve1` | `192.168.100.111` |
+| `rrs-pve2` | `192.168.100.112` |
+| South NAS / QDevice | `192.168.100.120` |
+
+These are proposals, not observed values. **North's actual usage is not fully
+known** — only `kjv1` at `.2` was visible. A capture of `kjv1` (`pvesm status`,
+`corosync.conf`) plus a scan of the segment confirms what is really taken before
+anything is committed.
+
+### The kit enforces this
+
+`20-network.sh` runs `arping -D` on the physical NIC before assigning any
+address, and **refuses to continue if something already answers**. Three
+outcomes:
+
+- address answers → abort, naming the address and why
+- nothing answers → proceed, logging that it is free
+- `arping` missing or link unavailable → warn and proceed, explicitly saying the
+  check could not run rather than implying the address is free
+
+A false "free" is the dangerous answer, so the unknown case is never reported as
+a pass.
+
+### Corosync on a shared segment
+
+Both clusters' corosync traffic now shares one broadcast domain. PVE 9 uses knet
+with unicast, so there is no multicast collision, and the cluster names already
+differ (`ContinuumTMN` vs `ctm-rrsouth`). Workable — but it does mean North's
+cluster heartbeat and South's share a wire. If that segment ever gets congested,
+it affects quorum at **both** terminals simultaneously, and a fencing event
+becomes a two-terminal event rather than a one-terminal one. Worth knowing when
+sizing the switch and deciding what else is allowed onto it.
 
 ## How parity handles the renumber
 
