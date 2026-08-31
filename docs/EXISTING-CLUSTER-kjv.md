@@ -1,6 +1,9 @@
 # Existing cluster — as observed
 
-Baseline for building the new pair. Read off the Proxmox UI on 2026-08-30.
+The kjv cluster at Red River. It is the reference for the new pair being built
+for **Red River South Terminal**.
+
+Read off the Proxmox UI on 2026-08-30.
 
 **Confidence:** *observed* = read directly from the UI. *inferred* = deduced,
 verify before relying on. Anything not listed here was not visible and is still

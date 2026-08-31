@@ -25,10 +25,10 @@ it — rather than re-deriving values by hand into the inventory.
 
 ```bash
 # 1. Snapshot the known-good servers. Read-only; writes nothing to them.
-./bin/ctm-provision line2 capture
+./bin/ctm-provision rrsouth capture
 
 # 2. Snapshot the new servers and diff them against that baseline.
-./bin/ctm-provision line2 parity
+./bin/ctm-provision rrsouth parity
 ```
 
 Set `*_REFERENCE_NODES` in the inventory to the existing pair, most
@@ -62,12 +62,12 @@ The new site keeps `192.168.100.0/24` but moves the panel VLAN to
 intended change on every run:
 
 ```bash
-LINE2_SUBNET_REMAP="192.168.50=192.168.51"
+RRSOUTH_SUBNET_REMAP="192.168.50=192.168.51"
 ```
 
 It rewrites the baseline before diffing, so the intended move reads clean while
 a host left on the old subnet — or `192.168.100.x` renumbered by mistake — is
-still caught. See [`../../docs/ADDRESS-PLAN-new-site.md`](../../docs/ADDRESS-PLAN-new-site.md).
+still caught. See [`../../docs/ADDRESS-PLAN-rrsouth.md`](../../docs/ADDRESS-PLAN-rrsouth.md).
 
 Then close each `[DRIFT]` with the stage that owns it (`postinstall` for repos,
 time and packages; `network` for bridges; `storage` for the NAS) and re-run
@@ -130,9 +130,9 @@ the repo.
 ```bash
 cd deploy/proxmox
 
-./bin/ctm-provision line2 preflight            # read-only, run this first
-./bin/ctm-provision line2 all --dry-run        # print every command, change nothing
-./bin/ctm-provision line2 all
+./bin/ctm-provision rrsouth preflight            # read-only, run this first
+./bin/ctm-provision rrsouth all --dry-run        # print every command, change nothing
+./bin/ctm-provision rrsouth all
 ```
 
 Or stage by stage, which is what you want the first time through:

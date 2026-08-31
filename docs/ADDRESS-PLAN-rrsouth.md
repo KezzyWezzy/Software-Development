@@ -1,6 +1,7 @@
-# Address plan — new site
+# Address plan — Red River South Terminal
 
-Derived from the existing kjv build. The rule is deliberately boring: **keep the
+Derived from the existing kjv cluster at Red River. The new pair is being built
+for **Red River South Terminal**. The rule is deliberately boring: **keep the
 host octet, change only the third octet.** Everything already written down about
 Red River then transfers by inspection, and there is nothing to re-derive under
 time pressure at the terminal.
@@ -48,21 +49,38 @@ is not only a host-config change. For every kiosk at the new site:
 A wrong address here fails *silently* — which is exactly the class of fault that
 has already cost days on this system.
 
-## Keeping 192.168.100.0/24 identical — the one thing to confirm
+## Keeping 192.168.100.0/24 identical — what has to be true
 
-Two clusters using the same corosync/mgmt subnet is fine **only while those
-segments never route to each other.** Worth settling explicitly before build:
+Both clusters are at Red River: the existing kjv pair, and the new pair for
+South Terminal. Two clusters can carry the same subnet only if those segments
+are genuinely separate wires. Two facts decide it.
 
-- **Separate NAS per site** — fine. Each site's `192.168.100.20` is its own box,
-  and nothing crosses.
-- **New site must reach the *existing* NAS** — broken. A host cannot route to
-  `192.168.100.20` at another site while its own interface owns
-  `192.168.100.0/24`; the traffic never leaves the local segment. If backups,
-  replication, or a shared ISO store are meant to cross sites, the mgmt network
-  has to be renumbered too, exactly like the panel VLAN.
+**The evidence in favour.** On kjv1, `vmbr0` holds `192.168.100.2/24` with **no
+gateway** *(observed)*. A segment with no gateway does not route anywhere, which
+is exactly what a private cluster-interconnect and storage link looks like. If
+South's `192.168.100.0/24` is likewise its own switch or VLAN with its own NAS
+on it, duplicating the subnet is fine and nothing crosses.
 
-Nothing in the kit depends on the answer — but if the second case is what's
-intended, it is much cheaper to find out now than after both nodes are built.
+**What would break it.** If South must reach a NAS that lives on the *existing*
+`192.168.100.0/24` — a shared Synology, cross-site backups, one ISO store — it
+cannot. A host will never route to another terminal's `192.168.100.20` while its
+own interface owns that subnet; the traffic is delivered locally and never
+leaves. Same if the two terminals' management networks are ever trunked onto
+shared switching: duplicate subnets on one L2 domain is an address conflict, not
+a topology.
+
+So the question to answer before building is narrow:
+
+> **Does Red River South get its own NAS on its own `192.168.100.0/24`, or does
+> it use the existing one?**
+
+Its own → keep the subnet identical as directed, nothing more to do. Shared →
+the management network needs renumbering too, the same way the panel VLAN did
+(`192.168.100` → `192.168.101` keeps the rule consistent).
+
+Nothing in the kit depends on the answer — both are one inventory value — but it
+is much cheaper to settle now than after both nodes are built and the NAS will
+not mount.
 
 ## How parity handles the renumber
 

@@ -18,34 +18,33 @@
 # kjv2 is currently down. Capture whatever is reachable -- one healthy
 # reference is enough to clone from, and parity will simply skip the absent one.
 # ---------------------------------------------------------------------------
-SITES=(line2 nash)
+SITES=(rrsouth)
 
-LINE2_REFERENCE_NODES="TODO"      # e.g. "192.168.50.110"  (kjv1)
-NASH_REFERENCE_NODES="TODO"
+RRSOUTH_REFERENCE_NODES="TODO"      # e.g. "192.168.50.110"  (kjv1)
 
 # ---------------------------------------------------------------------------
-# Line 2
+# Red River South Terminal
 # ---------------------------------------------------------------------------
-LINE2_CLUSTER_NAME="ctm-line2"
-LINE2_NODES=(line2-pve1 line2-pve2)
+RRSOUTH_CLUSTER_NAME="ctm-rrsouth"
+RRSOUTH_NODES=(rrs-pve1 rrs-pve2)
 
-LINE2_PVE1_ADDR="TODO"            # mgmt IP of node 1 (reachable from here now)
-LINE2_PVE2_ADDR="TODO"
-LINE2_PVE1_RING0="TODO"           # corosync ring0. kjv uses the 192.168.100.0/24
-LINE2_PVE2_RING0="TODO"           # bridge for this -- keep it off the panel VLAN.
+RRSOUTH_PVE1_ADDR="TODO"            # mgmt IP of node 1 (reachable from here now)
+RRSOUTH_PVE2_ADDR="TODO"
+RRSOUTH_PVE1_RING0="TODO"           # corosync ring0. kjv uses the 192.168.100.0/24
+RRSOUTH_PVE2_RING0="TODO"           # bridge for this -- keep it off the panel VLAN.
 
-LINE2_QDEVICE_ADDR="TODO"         # host running corosync-qnetd (see STAGING.md --
-LINE2_QDEVICE_USER="root"         # on a Synology this is a Debian container, not DSM)
+RRSOUTH_QDEVICE_ADDR="TODO"         # host running corosync-qnetd (see STAGING.md --
+RRSOUTH_QDEVICE_USER="root"         # on a Synology this is a Debian container, not DSM)
 
 # Subnets deliberately renumbered at this site, as "from=to" prefixes.
 # The panel VLAN moves 192.168.50.x -> 192.168.51.x; 192.168.100.x is kept
 # identical to the existing cluster. Parity applies this to the baseline so
 # the intended change does not read as drift, while still catching a host
 # left on the old subnet or renumbered to the wrong one.
-LINE2_SUBNET_REMAP="192.168.50=192.168.51"
+RRSOUTH_SUBNET_REMAP="192.168.50=192.168.51"
 
-LINE2_TIMEZONE="America/Chicago"
-LINE2_NTP_SERVERS="TODO"          # air-gapped: your local time source
+RRSOUTH_TIMEZONE="America/Chicago"
+RRSOUTH_NTP_SERVERS="TODO"          # air-gapped: your local time source
 
 # --- Bridges: bridge|iface|cidr|gateway|comment ------------------------------
 # Mirrors kjv1's layout. Interface names are MAC-derived (enx*) and therefore
@@ -57,7 +56,7 @@ LINE2_NTP_SERVERS="TODO"          # air-gapped: your local time source
 # Bridge specs are PER NODE. Each host has its own address on every bridge,
 # and enx* NIC names are MAC-derived so they differ even between identical
 # machines -- run preflight on each host to read its real names.
-LINE2_PVE1_BRIDGES="
+RRSOUTH_PVE1_BRIDGES="
 vmbr0|TODO|TODO|
 |mgmt + corosync -- 192.168.100.0/24, SAME as existing, no gateway
 vmbr1|TODO|TODO|TODO|panel VLAN -- NEW SITE USES 192.168.51.0/24, gw .51.1
@@ -65,7 +64,7 @@ vmbr2|TODO|TODO|
 |third network (kjv1: 192.168.12.0/24, no gateway)
 "
 
-LINE2_PVE2_BRIDGES="
+RRSOUTH_PVE2_BRIDGES="
 vmbr0|TODO|TODO|
 |mgmt + corosync
 vmbr1|TODO|TODO|TODO|panel VLAN
@@ -80,62 +79,15 @@ vmbr2|TODO|TODO|
 # Mirrors the kjv cluster: three Synology NFS stores plus one iSCSI LUN.
 # Confirm the real export paths, target IQN and content types from a capture of
 # kjv1 before running -- the values below are the shape, not verified strings.
-LINE2_STORAGE="
+RRSOUTH_STORAGE="
 nfs|ds923-backups|TODO|TODO|backup|--options vers=4.1
 nfs|ds923-iso|TODO|TODO|iso,vztmpl|--options vers=4.1
 nfs|ds923-vm-disks|TODO|TODO|images,rootdir|--options vers=4.1
 iscsi|ContinuumTMLUN01|TODO|TODO|none|
 "
 
-# ---------------------------------------------------------------------------
-# Nash
-# ---------------------------------------------------------------------------
-NASH_CLUSTER_NAME="ctm-nash"
-NASH_NODES=(nash-pve1 nash-pve2)
-
-NASH_PVE1_ADDR="TODO"
-NASH_PVE2_ADDR="TODO"
-NASH_PVE1_RING0="TODO"
-NASH_PVE2_RING0="TODO"
-
-NASH_QDEVICE_ADDR="TODO"
-NASH_QDEVICE_USER="root"
-
-# Subnets deliberately renumbered at this site, as "from=to" prefixes.
-# The panel VLAN moves 192.168.50.x -> 192.168.51.x; 192.168.100.x is kept
-# identical to the existing cluster. Parity applies this to the baseline so
-# the intended change does not read as drift, while still catching a host
-# left on the old subnet or renumbered to the wrong one.
-NASH_SUBNET_REMAP="192.168.50=192.168.51"
-
-NASH_TIMEZONE="America/Chicago"
-NASH_NTP_SERVERS="TODO"
-
-# Bridge specs are PER NODE. Each host has its own address on every bridge,
-# and enx* NIC names are MAC-derived so they differ even between identical
-# machines -- run preflight on each host to read its real names.
-NASH_PVE1_BRIDGES="
-vmbr0|TODO|TODO|
-|mgmt + corosync -- 192.168.100.0/24, SAME as existing, no gateway
-vmbr1|TODO|TODO|TODO|panel VLAN -- NEW SITE USES 192.168.51.0/24, gw .51.1
-vmbr2|TODO|TODO|
-|third network (kjv1: 192.168.12.0/24, no gateway)
-"
-
-NASH_PVE2_BRIDGES="
-vmbr0|TODO|TODO|
-|mgmt + corosync
-vmbr1|TODO|TODO|TODO|panel VLAN
-vmbr2|TODO|TODO|
-|third network
-"
-
-NASH_STORAGE="
-nfs|ds923-backups|TODO|TODO|backup|--options vers=4.1
-nfs|ds923-iso|TODO|TODO|iso,vztmpl|--options vers=4.1
-nfs|ds923-vm-disks|TODO|TODO|images,rootdir|--options vers=4.1
-iscsi|ContinuumTMLUN01|TODO|TODO|none|
-"
+# To add another site: copy the block above, change the prefix, and add the
+# lowercase key to SITES.
 
 # ---------------------------------------------------------------------------
 # Air-gap staging -- see offline/STAGING.md.

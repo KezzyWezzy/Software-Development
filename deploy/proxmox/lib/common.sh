@@ -16,10 +16,10 @@ step() { printf '\n%s---- %s ----%s\n' "$_c_dim" "$*" "$_c_off" >&2; }
 
 DRY_RUN="${DRY_RUN:-0}"
 
-# upper <site>  ->  LINE2 / NASH, for indirect variable lookup
+# upper <site>  ->  RRSOUTH, for indirect variable lookup
 upper() { printf '%s' "${1^^}"; }
 
-# var SITE SUFFIX   ->  value of e.g. LINE2_PVE1_ADDR
+# var SITE SUFFIX   ->  value of e.g. RRSOUTH_PVE1_ADDR
 var() {
   local name="$(upper "$1")_$2"
   printf '%s' "${!name-}"
