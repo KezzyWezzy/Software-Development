@@ -57,7 +57,15 @@ $cases = @(
     @{ Name = '2 GB stick, too small'
        Num = 5; Model = 'Generic Flash'; Size = '2GB'; Bus = 'USB'; Boot = '$false'
        Force = $true; Expect = 'REFUSE'; Because = 'at least' }
+
+    # The ISO would be downloaded onto the very disk that is about to be erased.
+    @{ Name = 'WorkDir on the target stick'
+       Num = 3; Model = 'SanDisk Ultra'; Size = '32GB'; Bus = 'USB'; Boot = '$false'
+       Force = $false; WorkDirDisk = 3; Expect = 'REFUSE'; Because = 'is on the disk being wiped' }
 )
+
+# Unless a case says otherwise, the WorkDir lives on some disk that is not the target.
+foreach ($c in $cases) { if (-not $c.ContainsKey('WorkDirDisk')) { $c['WorkDirDisk'] = 99 } }
 
 $results = @()
 
@@ -65,6 +73,9 @@ foreach ($case in $cases) {
 
     $driver = @"
 `$ErrorActionPreference = 'Stop'
+
+# Which physical disk the WorkDir resolves to. 99 means "not the target".
+`$global:FakeWorkDirDisk = $($case.WorkDirDisk)
 
 `$global:FakeDisk = [pscustomobject]@{
     Number       = $($case.Num)
@@ -83,10 +94,13 @@ function global:Get-Disk {
 
 function global:Get-Partition {
     [CmdletBinding()] param(`$DriveLetter, `$DiskNumber)
-    # Only a real A-Z letter maps to a partition. The WorkDir check passes a path root,
-    # which on a non-Windows host is '/' - that must behave like "no such volume".
+    # Every case selects its target by -DiskNumber, so the ONLY -DriveLetter lookup the script
+    # makes is the WorkDir check. It must resolve to the disk the case nominates, NOT blindly to
+    # the target - doing that fired the WorkDir guard on every case. It went unnoticed because
+    # the temp path is '/' on Linux, which fails this match and fell through to the throw below;
+    # on Windows it is 'C:\...', the letter matched, and five of seven cases broke.
     if (`$DriveLetter -and "`$DriveLetter" -match '^[A-Za-z]`$') {
-        return [pscustomobject]@{ DiskNumber = `$global:FakeDisk.Number; DriveLetter = `$DriveLetter }
+        return [pscustomobject]@{ DiskNumber = `$global:FakeWorkDirDisk; DriveLetter = `$DriveLetter }
     }
     if (`$null -ne `$DiskNumber) { return @() }
     throw 'no volume mounted'
