@@ -109,6 +109,58 @@ First boot is slow while Windows swaps the real machine's storage and GPU driver
 ones. Once up, install the guest tools (VMware Tools, Guest Additions, SPICE) before you judge
 performance — graphics are software-rendered until then.
 
+## Building a Proxmox host
+
+Proxmox VE is the recommended x86-64 host for this image: `qm disk import` reads VHDX directly
+via `qemu-img`, so **you can skip step 2 entirely** and import the raw Disk2vhd output.
+
+### Make the installer USB
+
+`New-ProxmoxInstallUsb.ps1` downloads the ISO, verifies its SHA256, and writes it to a stick in
+DD (raw) mode. Elevated PowerShell, 8 GB stick or larger:
+
+```powershell
+.\New-ProxmoxInstallUsb.ps1 -DriveLetter D -WhatIf   # every check, writes nothing
+.\New-ProxmoxInstallUsb.ps1 -DriveLetter D
+```
+
+The ISO is a hybrid image and must be written sector for sector. Copying the files onto a FAT32
+stick does not boot, and **Rufus's default "ISO mode" rewrites the boot layout in a way the PVE
+installer does not survive** — that one setting is the most common cause of a Proxmox stick that
+won't boot. If you use Rufus instead of this script, pick **DD Image mode**.
+
+The script destroys the target disk, so it resolves the disk number *before* wiping the partition
+table, and refuses any disk that is not on the USB bus, is larger than 512 GB, is under 4 GB, or is
+the boot/system disk. `-Force` overrides the first two. Nothing overrides the boot-disk refusal.
+You then type the disk's model name to confirm.
+
+### Install and import
+
+Boot the installer in **UEFI** mode with VT-x/AMD-V enabled. At the filesystem prompt: ZFS RAID1 if
+you have two SSDs and ≥32 GB RAM (snapshots, checksums, and ARC will use the RAM); otherwise
+ext4 + LVM-thin, which is simpler and still does thin snapshots. Don't install onto the drive
+holding your capture. Afterwards, fix the subscription-repo error under
+**Datacenter → *node* → Updates → Repositories**: disable `pve-enterprise`, add `pve-no-subscription`.
+
+```bash
+qm create 100 --name kezzy-p2v --ostype win11 \
+  --machine q35 --bios ovmf --cpu host --cores 8 --memory 16384 \
+  --efidisk0 local-lvm:0,efitype=4m,pre-enrolled-keys=1 \
+  --tpmstate0 local-lvm:1,version=v2 \
+  --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-single
+
+qm disk import 100 /var/lib/vz/dump/KEZZY-PC-20260831-052724.vhdx local-lvm
+qm set 100 --sata0 local-lvm:vm-100-disk-2
+qm set 100 --boot order=sata0
+```
+
+`efidisk0` takes `disk-0` and `tpmstate0` takes `disk-1`, so the imported disk is usually `disk-2` —
+read the `unused0:` line from `qm config 100` rather than assuming. Attach it as SATA for the first
+boot, then install the VirtIO guest drivers and move it to `scsi0` on `virtio-scsi-single`; that's
+where the performance is. `--ostype win11` matters (it enables the Hyper-V enlightenments), the
+imported disk carries its own ESP so `efidisk0` is only NVRAM, and if the VM won't boot, retry with
+`pre-enrolled-keys=0` before assuming the image is bad.
+
 ## Running it from a Mac
 
 Ranked by how good the result actually is:
@@ -187,6 +239,23 @@ path root is `/` and never a drive letter.
 
 So: still run it with `-DryRun` on the real machine first. The dry run performs every preflight
 check and writes the manifest without reading or writing a single disk block.
+
+### `New-ProxmoxInstallUsb.ps1`
+
+Also **never executed on Windows**. `tests/Invoke-UsbGuardTests.ps1` mocks `Get-Disk` and friends
+and drives the script with `-WhatIf` across seven fake disks, asserting that each is accepted or
+refused *for the right reason*: a genuine 32 GB stick proceeds, internal NVMe and SATA disks are
+refused as non-USB, an 8 TB USB drive is refused by the size sanity limit but proceeds under
+`-Force`, a 2 GB stick is refused as too small, and the boot disk is refused even with `-Force`.
+
+```bash
+pwsh -File tests/Invoke-UsbGuardTests.ps1
+```
+
+That covers target selection — the part where a defect destroys a disk. **The raw write path is
+not covered at all**: `-WhatIf` returns before it, and it cannot be exercised without a real USB
+stick on a real Windows host. Run `-WhatIf` first and read back the disk it names. If the raw
+write fails on your machine, use Rufus in DD Image mode.
 
 ### `convert-image.sh`
 
