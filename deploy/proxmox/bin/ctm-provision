@@ -1,0 +1,317 @@
+#!/usr/bin/env bash
+# CTM Proxmox provisioning driver.
+#
+# Runs on a CONTROL machine that can reach the Proxmox hosts over SSH -- your
+# laptop or a jump box on the plant network. It never runs on the hosts.
+#
+#   ctm-provision <site> <stage> [--dry-run] [--yes]
+#
+# Stages, in the order they must run:
+#   backup       vzdump the reference guests to the NAS + archive host config
+#   capture      snapshot the KNOWN-GOOD reference servers into baseline/
+#   parity       snapshot the new servers and diff them against that baseline
+#   preflight    read-only readiness check on every node
+#   postinstall  repos, time, packages, sshd  (per node)
+#   network      panel-VLAN bridge vmbr1      (per node)
+#   cluster      create on node1, join node2
+#   qdevice      qnetd on the NAS + register with the cluster
+#   ha           HA group covering both nodes
+#   storage      attach the NAS as shared storage
+#   all          every stage above, in order
+#
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=../lib/common.sh
+source "${HERE}/lib/common.sh"
+# shellcheck source=../lib/compare.sh
+source "${HERE}/lib/compare.sh"
+
+INV="${CTM_INVENTORY:-${HERE}/inventory/sites.sh}"
+[[ -f "$INV" ]] || die "no inventory at ${INV} -- copy inventory/sites.example.sh to inventory/sites.sh and fill it in"
+# shellcheck source=/dev/null
+source "$INV"
+
+SITE="${1:-}"; STAGE="${2:-}"; shift 2 2>/dev/null || true
+for a in "$@"; do
+  case "$a" in
+    --dry-run) DRY_RUN=1 ;;
+    --yes)     ASSUME_YES=1 ;;
+    *) die "unknown option: $a" ;;
+  esac
+done
+export DRY_RUN ASSUME_YES="${ASSUME_YES:-0}"
+
+[[ -n "$SITE"  ]] || die "usage: ctm-provision <site> <stage> [--dry-run] [--yes]"
+[[ -n "$STAGE" ]] || die "usage: ctm-provision <site> <stage> [--dry-run] [--yes]"
+
+printf '%s\n' "${SITES[@]}" | grep -qx "$SITE" \
+  || die "site '${SITE}' is not in SITES (${SITES[*]})"
+
+[[ -f "$SSH_KEY" ]] || die "SSH key not found: ${SSH_KEY}"
+
+S="${HERE}/scripts"
+
+# The new hosts' addresses are only needed by stages that touch them. backup and
+# capture read the EXISTING cluster, and must work before the new hardware even
+# exists -- which is the order the runbook recommends, backups first.
+N1=""; N2=""
+case "$STAGE" in
+  backup|capture) ;;
+  *)
+    N1="$(require_var "$SITE" PVE1_ADDR)"
+    N2="$(require_var "$SITE" PVE2_ADDR)"
+    ;;
+esac
+
+# --------------------------------------------------------------------------
+stage_preflight() {
+  step "preflight -- ${SITE}"
+  local host rc=0
+  for host in "$N1" "$N2"; do
+    rsh_script "$host" "${S}/00-preflight.sh" \
+      "OFFLINE_BUNDLE_PATH=${OFFLINE_BUNDLE_PATH}" || rc=1
+  done
+  [[ $rc -eq 0 ]] || die "preflight failed -- fix the items above before continuing"
+  ok "both nodes ready"
+}
+
+stage_postinstall() {
+  step "post-install -- ${SITE}"
+  require_all "$SITE" TIMEZONE NTP_SERVERS
+  local host
+  for host in "$N1" "$N2"; do
+    log "post-install on ${host}"
+    rsh_script "$host" "${S}/10-pve-postinstall.sh" \
+      "TIMEZONE=$(var "$SITE" TIMEZONE)" \
+      "NTP_SERVERS=$(var "$SITE" NTP_SERVERS)" \
+      "OFFLINE_BUNDLE_PATH=${OFFLINE_BUNDLE_PATH}"
+  done
+  ok "post-install done"
+}
+
+stage_network() {
+  step "bridges -- ${SITE}"
+  require_all "$SITE" PVE1_BRIDGES PVE2_BRIDGES
+  warn "this edits /etc/network/interfaces; existing bridges are never touched"
+  confirm "proceed with network changes on ${SITE}?" || die "aborted"
+
+  # Bridge specs are PER NODE, not per site: each host has its own address on
+  # every bridge, and the NIC names are MAC-derived (enx*) so they differ even
+  # between identical machines. Sharing one spec would hand node 2 node 1's
+  # addresses and collide on the panel VLAN.
+  local host idx=0
+  for host in "$N1" "$N2"; do
+    idx=$((idx+1))
+    log "bridges on ${host} (node ${idx})"
+    rsh_script "$host" "${S}/20-network.sh" \
+      "BRIDGES=$(var "$SITE" "PVE${idx}_BRIDGES")"
+  done
+  ok "bridges configured"
+}
+
+# pvecm add --use_ssh needs node2 -> node1 root SSH. Password auth is off by
+# then, so seed the keys here rather than leaving it to an interactive prompt.
+exchange_root_keys() {
+  log "exchanging root SSH keys between nodes"
+  local a b key
+  for pair in "$N1 $N2" "$N2 $N1"; do
+    read -r a b <<<"$pair"
+    rsh "$a" "test -f /root/.ssh/id_rsa || ssh-keygen -q -t rsa -b 3072 -N '' -f /root/.ssh/id_rsa"
+    key="$(rsh "$a" "cat /root/.ssh/id_rsa.pub")"
+    [[ -n "$key" || "$DRY_RUN" == "1" ]] || die "could not read root pubkey from ${a}"
+    # Braces matter: without them the trailing || also fires when an earlier
+    # command in the && chain fails, appending the key to a directory that was
+    # never set up.
+    rsh "$b" "set -e
+              mkdir -p /root/.ssh && chmod 700 /root/.ssh
+              touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys
+              if ! grep -qxF '${key}' /root/.ssh/authorized_keys; then
+                echo '${key}' >> /root/.ssh/authorized_keys
+              fi"
+  done
+  ok "root keys exchanged"
+}
+
+stage_cluster() {
+  step "cluster -- ${SITE}"
+  require_all "$SITE" CLUSTER_NAME PVE1_RING0 PVE2_RING0
+  local name r1 r2
+  name="$(require_var "$SITE" CLUSTER_NAME)"
+  r1="$(require_var "$SITE" PVE1_RING0)"
+  r2="$(require_var "$SITE" PVE2_RING0)"
+
+  warn "joining REPLACES node 2's /etc/pve with the cluster copy"
+  confirm "create cluster '${name}' and join ${N2} to it?" || die "aborted"
+
+  exchange_root_keys
+
+  log "creating cluster on ${N1}"
+  rsh_script "$N1" "${S}/40-cluster-create.sh" "CLUSTER_NAME=${name}" "RING0_ADDR=${r1}"
+
+  log "joining ${N2}"
+  rsh_script "$N2" "${S}/41-cluster-join.sh" "PEER_RING0=${r1}" "RING0_ADDR=${r2}"
+  ok "cluster '${name}' formed"
+}
+
+stage_qdevice() {
+  step "QDevice -- ${SITE}"
+  require_all "$SITE" QDEVICE_ADDR
+  local qaddr quser
+  qaddr="$(require_var "$SITE" QDEVICE_ADDR)"
+  quser="$(var "$SITE" QDEVICE_USER)"
+
+  log "installing qnetd on ${qaddr}"
+  SSH_USER="${quser:-root}" rsh_script "$qaddr" "${S}/50-qdevice-qnetd.sh"
+
+  log "registering QDevice with the cluster"
+  rsh_script "$N1" "${S}/51-qdevice-setup.sh" "QDEVICE_ADDR=${qaddr}"
+  ok "QDevice active -- cluster now has 3 votes"
+}
+
+stage_ha() {
+  step "HA group -- ${SITE}"
+  rsh_script "$N1" "${S}/60-ha.sh" \
+    "NODE1=$(site_nodes "$SITE" | sed -n 1p)" \
+    "NODE2=$(site_nodes "$SITE" | sed -n 2p)" \
+    "SITE=${SITE}"
+  ok "HA group configured"
+}
+
+stage_storage() {
+  step "NAS storage -- ${SITE}"
+  require_all "$SITE" STORAGE
+  rsh_script "$N1" "${S}/30-storage.sh" \
+    "STORAGES=$(var "$SITE" STORAGE)"
+  ok "storage attached"
+}
+
+
+# --------------------------------------------------------------------------
+# Parity stages. "Match the existing servers" is a cloning problem, not a
+# greenfield one: capture the golden config off the working pair, then diff the
+# new hosts against it. Both stages are read-only on every host they touch.
+# --------------------------------------------------------------------------
+BASELINE_DIR="${HERE}/baseline"
+
+stage_capture() {
+  step "capture baseline -- ${SITE}"
+  require_all "$SITE" REFERENCE_NODES
+  local refs r name out
+  refs="$(var "$SITE" REFERENCE_NODES)"
+  [[ -n "$refs" ]] || die "inventory: $(upper "$SITE")_REFERENCE_NODES is not set -- \
+name the existing known-good servers to capture from"
+
+  mkdir -p "$BASELINE_DIR"
+  for r in $refs; do
+    name="$(printf '%s' "$r" | tr -c 'a-zA-Z0-9._-' '_')"
+    out="${BASELINE_DIR}/${SITE}-${name}.capture"
+    log "capturing ${r}"
+    if [[ "$DRY_RUN" == "1" ]]; then
+      printf '%s[dry-run]%s would capture %s -> %s\n' "$_c_dim" "$_c_off" "$r" "$out" >&2
+      continue
+    fi
+    # shellcheck disable=SC2046
+    ssh $(ssh_opts) "${SSH_USER}@${r}" "bash -s" \
+      < "${S}/01-capture.sh" > "${out}.tmp" \
+      || die "capture failed on ${r}"
+    mv "${out}.tmp" "$out"
+    ok "$(wc -l < "$out") lines -> ${out#"$HERE"/}"
+  done
+
+  warn "baseline files contain plant addressing -- they are gitignored; keep them that way"
+}
+
+stage_parity() {
+  step "parity check -- ${SITE}"
+  local refs base first candidates c name tmp rc=0
+  refs="$(var "$SITE" REFERENCE_NODES)"
+  first="$(printf '%s' "$refs" | awk '{print $1}')"
+  [[ -n "$first" ]] || die "inventory: $(upper "$SITE")_REFERENCE_NODES is not set"
+
+  # Deliberate renumbering at this site (e.g. panel VLAN 192.168.50 -> .51) is
+  # applied to the baseline before diffing, so an intended change is not
+  # reported as drift on every run.
+  export SUBNET_REMAP="$(var "$SITE" SUBNET_REMAP)"
+  [[ -n "$SUBNET_REMAP" ]] && log "subnet remap: ${SUBNET_REMAP}"
+
+  base="${BASELINE_DIR}/${SITE}-$(printf '%s' "$first" | tr -c 'a-zA-Z0-9._-' '_').capture"
+  [[ -f "$base" ]] || die "no baseline at ${base#"$HERE"/} -- run the 'capture' stage first"
+
+  # If more than one reference was captured, the references should agree with
+  # each other. A split between them means the baseline itself is ambiguous.
+  local r rb
+  for r in $refs; do
+    [[ "$r" == "$first" ]] && continue
+    rb="${BASELINE_DIR}/${SITE}-$(printf '%s' "$r" | tr -c 'a-zA-Z0-9._-' '_').capture"
+    [[ -f "$rb" ]] || continue
+    log "reference cross-check: ${first} vs ${r}"
+    compare_captures "$base" "$rb" \
+      || warn "the two reference servers disagree -- decide which is authoritative before cloning"
+  done
+
+  candidates="$N1 $N2"
+  for c in $candidates; do
+    name="$(printf '%s' "$c" | tr -c 'a-zA-Z0-9._-' '_')"
+    step "candidate ${c} vs baseline ${first}"
+    if [[ "$DRY_RUN" == "1" ]]; then
+      printf '%s[dry-run]%s would capture and diff %s\n' "$_c_dim" "$_c_off" "$c" >&2
+      continue
+    fi
+    tmp="$(mktemp)"
+    # shellcheck disable=SC2046
+    ssh $(ssh_opts) "${SSH_USER}@${c}" "bash -s" < "${S}/01-capture.sh" > "$tmp" \
+      || die "capture failed on ${c}"
+    mkdir -p "${BASELINE_DIR}/candidates"
+    cp "$tmp" "${BASELINE_DIR}/candidates/${SITE}-${name}.capture"
+    compare_captures "$base" "$tmp" || rc=1
+    rm -f "$tmp"
+  done
+
+  if [[ $rc -eq 0 ]]; then
+    ok "both candidates match the baseline"
+  else
+    warn "drift found -- each [DRIFT] block above is a difference to close"
+    warn "run the matching stage (postinstall / network / storage) then re-check"
+  fi
+  return $rc
+}
+
+
+stage_backup() {
+  step "backup -- ${SITE}"
+  require_all "$SITE" REFERENCE_NODES BACKUP_STORAGE
+  local ref
+  ref="$(var "$SITE" REFERENCE_NODES | awk '{print $1}')"
+
+  warn "guests are backed up in snapshot mode and keep running"
+  warn "the config archive is REFERENCE ONLY -- see docs/BACKUP-RESTORE.md"
+  confirm "run vzdump on ${ref}?" || die "aborted"
+
+  rsh_script "$ref" "${S}/70-backup.sh" \
+    "BACKUP_STORAGE=$(var "$SITE" BACKUP_STORAGE)" \
+    "VMIDS=$(var "$SITE" BACKUP_VMIDS)" \
+    "MODE=${BACKUP_MODE:-snapshot}"
+  ok "backup complete"
+  warn "restoring a guest: it carries the OLD address inside its OS."
+  warn "71-restore-guest.sh leaves it stopped for exactly that reason."
+}
+
+case "$STAGE" in
+  backup)      stage_backup ;;
+  capture)     stage_capture ;;
+  parity)      stage_parity ;;
+  preflight)   stage_preflight ;;
+  postinstall) stage_postinstall ;;
+  network)     stage_network ;;
+  cluster)     stage_cluster ;;
+  qdevice)     stage_qdevice ;;
+  ha)          stage_ha ;;
+  storage)     stage_storage ;;
+  all)
+    stage_preflight; stage_postinstall; stage_network
+    stage_cluster;   stage_qdevice;     stage_storage; stage_ha
+    ok "site ${SITE} fully provisioned"
+    ;;
+  *) die "unknown stage '${STAGE}'" ;;
+esac

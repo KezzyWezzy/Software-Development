@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# Section-aware comparison of two ctm-capture snapshots.
+# Sourced by bin/ctm-provision.
+
+# Sections whose contents legitimately differ between two healthy hosts.
+# Reported, but never counted as drift.
+_expected_diff_re='^(identity|cpu and memory class|block devices and pools|quorum)'
+
+# Sections where identifiers differ by design but STRUCTURE must match.
+# Compared with addresses and names masked. 'cluster' and 'ha configuration'
+# belong here because a new site forms its OWN cluster: the cluster name, node
+# names and HA group name are all legitimately different from the reference,
+# while the shape -- two nodes, one ring, a qdevice, a group with a preferred
+# node and nofailback -- is exactly what must match.
+_addr_sensitive_re='^(/etc/network/interfaces|cluster|storage configuration|ha configuration|quorum)'
+
+# Replace IPv4 addresses, node names and MAC-derived NIC names with
+# placeholders, so a structural comparison is not swamped by values that are
+# unique to each machine by construction.
+#
+# enx*/wlx* names embed the adapter's MAC address (predictable-naming for USB
+# and wireless NICs), so two servers of the SAME model still get different
+# interface names. Without masking these, every bridge-port line reads as drift
+# and the real differences get lost in the noise.
+#
+# Only the HOST octet of an IPv4 address is masked, not the whole address. The
+# subnet a bridge carries is the invariant that must match between servers;
+# only the host's own number in it is allowed to differ. Masking the full
+# address would hide a bridge wired to the wrong network, which is precisely
+# the mistake worth catching.
+_mask_addrs() {
+  sed -E \
+    -e 's/\b(([0-9]{1,3}\.){3})[0-9]{1,3}\b/\1<H>/g' \
+    -e 's/^([[:space:]]*cluster_name:[[:space:]]*).*/\1<CLUSTER>/' \
+    -e 's/^([[:space:]]*name:[[:space:]]*).*/\1<NODE>/' \
+    -e 's/^([[:space:]]*ring0_addr:[[:space:]]*).*/\1<IP>/' \
+    -e 's/^(group:[[:space:]]*).*/\1<GROUP>/' \
+    -e 's/^([[:space:]]*nodes[[:space:]]+).*/\1<NODES>/' \
+    -e 's/\benx[0-9a-f]{12}\b/<ENX-NIC>/g' \
+    -e 's/\bwlx[0-9a-f]{12}\b/<WLX-NIC>/g' \
+    -e 's/\b(pve|node|kjv)[0-9]+\b/<NODE>/g' \
+    -e 's/Membership information.*/Membership information/'
+}
+
+# _apply_remap -- rewrite deliberately renumbered subnets on the BASELINE side
+# so an intended change does not read as drift.
+#
+# The new site keeps 192.168.100.0/24 but moves the panel VLAN from
+# 192.168.50.0/24 to 192.168.51.0/24. Without this, every interfaces line would
+# be flagged on every run, and a report that always cries drift is a report
+# nobody reads. Remapping is deliberately narrow: it rewrites only the exact
+# network prefixes listed in SUBNET_REMAP, so any OTHER address difference is
+# still caught.
+#
+# SUBNET_REMAP: whitespace-separated "from=to" prefixes, e.g. "192.168.50=192.168.51"
+_apply_remap() {
+  if [[ -z "${SUBNET_REMAP:-}" ]]; then cat; return; fi
+  local args=() pair from to
+  for pair in $SUBNET_REMAP; do
+    from="${pair%%=*}"; to="${pair##*=}"
+    [[ -n "$from" && -n "$to" && "$from" != "$pair" ]] || continue
+    # Anchor on a following dot so 192.168.5 cannot match 192.168.50.
+    args+=(-e "s/\\b${from//./\\.}\\./${to}./g")
+  done
+  [[ ${#args[@]} -eq 0 ]] && { cat; return; }
+  sed -E "${args[@]}"
+}
+
+# _split_sections FILE OUTDIR -- one file per '##### ' section, numbered so
+# ordering is preserved.
+_split_sections() {
+  awk -v dir="$2" '
+    /^##### / {
+      n++; name=substr($0,7); gsub(/[^a-zA-Z0-9]+/,"_",name);
+      f=sprintf("%s/%03d_%s", dir, n, name);
+      titles[n]=substr($0,7);
+      print substr($0,7) > (f ".title");
+      next
+    }
+    n { print >> (f ".body") }
+  ' "$1"
+}
+
+# compare_captures BASELINE CANDIDATE -- prints a report, returns 1 on drift.
+compare_captures() {
+  local base="$1" cand="$2"
+  local tmp; tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+
+  mkdir -p "$tmp/b" "$tmp/c"
+  _split_sections "$base" "$tmp/b"
+  _split_sections "$cand" "$tmp/c"
+
+  local drift=0 f title bb cc title_l
+  for f in "$tmp"/b/*.title; do
+    title="$(cat "$f")"
+    title_l="$(printf '%s' "$title" | tr '[:upper:]' '[:lower:]')"
+    bb="${f%.title}.body"
+    cc="$tmp/c/$(basename "${f%.title}").body"
+    [[ -f "$bb" ]] || bb=/dev/null
+    [[ -f "$cc" ]] || cc=/dev/null
+
+    if [[ "$title_l" =~ $_expected_diff_re ]]; then
+      if ! diff -q "$bb" "$cc" >/dev/null 2>&1; then
+        printf '  %s~ differs (expected)%s  %s\n' "$_c_dim" "$_c_off" "$title"
+      fi
+      continue
+    fi
+
+    if [[ "$title_l" =~ $_addr_sensitive_re ]]; then
+      # Structural comparison with addresses masked.
+      if diff -q <(_apply_remap < "$bb" | _mask_addrs) <(_mask_addrs < "$cc") >/dev/null 2>&1; then
+        printf '  %s[ ok ]%s %s %s(structure matches; addresses differ)%s\n' \
+          "$_c_grn" "$_c_off" "$title" "$_c_dim" "$_c_off"
+      else
+        printf '  %s[DRIFT]%s %s %s(structural)%s\n' \
+          "$_c_red" "$_c_off" "$title" "$_c_dim" "$_c_off"
+        diff -u <(_apply_remap < "$bb" | _mask_addrs) <(_mask_addrs < "$cc") \
+          | tail -n +3 | sed 's/^/        /'
+        drift=1
+      fi
+      continue
+    fi
+
+    # Everything else must match byte for byte.
+    if diff -q "$bb" "$cc" >/dev/null 2>&1; then
+      printf '  %s[ ok ]%s %s\n' "$_c_grn" "$_c_off" "$title"
+    else
+      printf '  %s[DRIFT]%s %s\n' "$_c_red" "$_c_off" "$title"
+      diff -u "$bb" "$cc" | tail -n +3 | sed 's/^/        /'
+      drift=1
+    fi
+  done
+
+  # Sections present on the candidate but absent from the baseline.
+  for f in "$tmp"/c/*.title; do
+    [[ -f "$tmp/b/$(basename "$f")" ]] && continue
+    printf '  %s[DRIFT]%s %s (present on candidate, absent from baseline)\n' \
+      "$_c_red" "$_c_off" "$(cat "$f")"
+    drift=1
+  done
+
+  return $drift
+}

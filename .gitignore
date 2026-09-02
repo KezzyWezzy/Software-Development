@@ -1,0 +1,4 @@
+# Plant addressing — never commit real site inventory
+deploy/proxmox/inventory/sites.sh
+# Captured host configuration — contains plant addressing
+deploy/proxmox/baseline/
