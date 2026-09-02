@@ -102,6 +102,25 @@ root, so that last one is a prerequisite, not a detail.
 `password|secret|token|key`, and never reads `/etc/pve/priv`, but the snapshots
 still contain your addressing and topology. Check one before sharing it.
 
+## Cloning the existing guests
+
+The CTM server is worth cloning rather than rebuilding — it carries the
+application, the database, the nginx listeners and years of configuration nobody
+wrote down. `backup` vzdumps it; `71-restore-guest.sh` restores it on the new
+cluster.
+
+**A restored guest is never auto-started.** It carries the original host's
+addressing inside its own OS, so the CTM server comes back believing it is
+`192.168.50.129`. North and South share a Layer 2 domain, so booting it
+unmodified puts a second machine on the wire claiming an address that is live at
+North. Renumber inside the guest first.
+
+What can and cannot be restored — and why `/etc/pve` must never be copied — is
+in [`../../docs/BACKUP-RESTORE.md`](../../docs/BACKUP-RESTORE.md).
+
+`backup` and `capture` read only the existing cluster, so both run before the
+new hardware exists. Take backups first.
+
 ## Prerequisites
 
 - Proxmox VE installed manually on both hosts at each site, reachable by IP.
@@ -139,6 +158,7 @@ Or stage by stage, which is what you want the first time through:
 
 | Stage | What it does | Risk |
 |---|---|---|
+| `backup` | `vzdump` the reference guests to the NAS + archive host config. | low |
 | `capture` | Snapshots the reference servers into `baseline/`. Read-only. | none |
 | `parity` | Snapshots the new servers and diffs against the baseline. Read-only. | none |
 | `preflight` | Reads versions, NICs, storage, clock, bundle. Changes nothing. | none |

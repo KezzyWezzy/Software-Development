@@ -7,6 +7,7 @@
 #   ctm-provision <site> <stage> [--dry-run] [--yes]
 #
 # Stages, in the order they must run:
+#   backup       vzdump the reference guests to the NAS + archive host config
 #   capture      snapshot the KNOWN-GOOD reference servers into baseline/
 #   parity       snapshot the new servers and diff them against that baseline
 #   preflight    read-only readiness check on every node
@@ -49,9 +50,19 @@ printf '%s\n' "${SITES[@]}" | grep -qx "$SITE" \
 
 [[ -f "$SSH_KEY" ]] || die "SSH key not found: ${SSH_KEY}"
 
-N1="$(require_var "$SITE" PVE1_ADDR)"
-N2="$(require_var "$SITE" PVE2_ADDR)"
 S="${HERE}/scripts"
+
+# The new hosts' addresses are only needed by stages that touch them. backup and
+# capture read the EXISTING cluster, and must work before the new hardware even
+# exists -- which is the order the runbook recommends, backups first.
+N1=""; N2=""
+case "$STAGE" in
+  backup|capture) ;;
+  *)
+    N1="$(require_var "$SITE" PVE1_ADDR)"
+    N2="$(require_var "$SITE" PVE2_ADDR)"
+    ;;
+esac
 
 # --------------------------------------------------------------------------
 stage_preflight() {
@@ -266,7 +277,28 @@ stage_parity() {
   return $rc
 }
 
+
+stage_backup() {
+  step "backup -- ${SITE}"
+  require_all "$SITE" REFERENCE_NODES BACKUP_STORAGE
+  local ref
+  ref="$(var "$SITE" REFERENCE_NODES | awk '{print $1}')"
+
+  warn "guests are backed up in snapshot mode and keep running"
+  warn "the config archive is REFERENCE ONLY -- see docs/BACKUP-RESTORE.md"
+  confirm "run vzdump on ${ref}?" || die "aborted"
+
+  rsh_script "$ref" "${S}/70-backup.sh" \
+    "BACKUP_STORAGE=$(var "$SITE" BACKUP_STORAGE)" \
+    "VMIDS=$(var "$SITE" BACKUP_VMIDS)" \
+    "MODE=${BACKUP_MODE:-snapshot}"
+  ok "backup complete"
+  warn "restoring a guest: it carries the OLD address inside its OS."
+  warn "71-restore-guest.sh leaves it stopped for exactly that reason."
+}
+
 case "$STAGE" in
+  backup)      stage_backup ;;
   capture)     stage_capture ;;
   parity)      stage_parity ;;
   preflight)   stage_preflight ;;

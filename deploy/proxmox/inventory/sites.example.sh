@@ -41,6 +41,11 @@ RRSOUTH_QDEVICE_USER="root"         # on a Synology this is a Debian container, 
 # identical to the existing cluster. Parity applies this to the baseline so
 # the intended change does not read as drift, while still catching a host
 # left on the old subnet or renumbered to the wrong one.
+# Backup source. BACKUP_VMIDS is "all" or a space-separated list; the CTM
+# server (101) and ContinuumHost (102) are the ones worth cloning.
+RRSOUTH_BACKUP_STORAGE="ds923-backups"
+RRSOUTH_BACKUP_VMIDS="all"
+
 RRSOUTH_SUBNET_REMAP="192.168.50=192.168.51"
 
 RRSOUTH_TIMEZONE="America/Chicago"
