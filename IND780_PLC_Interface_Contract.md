@@ -251,7 +251,159 @@ are explicitly documented as such on the ticket.
 
 ---
 
-## 8. Open items before this is buildable
+## 9. AOP migration — Floating Point example code onto an INTDIV module
+
+Applies when porting IND780 example code written for **Floating Point** mode
+onto a module whose definition is **Integer/Divisions**.
+
+### 9.1 Identify the module definition first
+
+The Studio 5000 tag *name* is not evidence of the mode. Read the data type:
+
+```
+IND780_Float:I   ->  ME:IND780Enet_INTDIV_1Slots:I:0     <- INTDIV, not FP
+IND780_Float:O   ->  ME:IND780Enet_INTDIV_1Slots:O:0
+```
+
+`INTDIV` = Integer/Divisions. `_1Slots` = one message slot. A tag named
+`IND780_Float` carrying an `INTDIV` type is an Integer/Divisions module with a
+misleading name — rename the tag or expect the next engineer to lose an
+afternoon.
+
+Structural tell: INTDIV carries **one** `Weight` INT and one `Command` /
+`Status` INT per direction. Floating Point carries **two** data words plus a
+`CMD_Response`.
+
+### 9.2 Members that do not exist in INTDIV
+
+| FP member | INTDIV equivalent |
+|---|---|
+| `:O.Slot1FPLoadData1` | none — collapses into `:O.Slot1.Weight` (single INT) |
+| `:O.Slot1FPLoadData2` | none — same |
+| `:I.Slot1FPdata1` / `FPdata2` | none — collapses into `:I.Slot1.Weight` |
+| `:I.Slot1CmndAck1` / `CmndAck2` | **none** — see §9.5 |
+| Both Data Integrity bits | `:I.Slot1.UpdateInProgress` + `:I.Slot1.DataOk` |
+
+### 9.3 Output — command bits became named BOOLs
+
+`IND780_Float:O.Slot1.*`
+
+| Command word bit | Member |
+|---|---|
+| 0–2 readback select | `Select1` / `Select2` / `Select3` |
+| 3 load tare | `LoadTare` |
+| 4 clear | `Clear` |
+| 5 tare | `Tare` |
+| 6 print | `Print` |
+| 7 zero | `Zero` |
+| 8 start / abort target | `AbortStartTarget` |
+| 9–11 display mode | `DisplayMode1` / `2` / `3` |
+| 15 load target | `LoadTarget` |
+| WORD 0 data | `Weight` (INT) |
+
+Also present: `Output1` / `Output2` / `Output3`, and the raw `Command` INT.
+
+### 9.4 Input — status bits became named BOOLs
+
+`IND780_Float:I.Slot1.*`
+
+| Status word bit | Member |
+|---|---|
+| 0 feed | `Feed` |
+| 1 fast feed | `FastFeed` |
+| 2 tolerance OK | `Tolerance_Ok` |
+| 3 under negative tolerance | `UnderLowTolerance` |
+| 4 over positive tolerance | `OverHighTolerance` |
+| 5 / 6 / 7 comparators | `Comparator3` / `Comparator2` / `Comparator1` |
+| 8 ENTER key | `EnterKey` |
+| 9–11 inputs | `Slot5_InputBit1` / `2` / `3` |
+| motion | `Motion` |
+| — | `NetMode`, `DataOk`, `UpdateInProgress` |
+
+Plus the raw `Status` INT.
+
+**These 16 named BOOLs are the whole word.** Count them — every bit of `Status`
+is exposed and named. Nothing is hidden in the raw INT, so a member absent from
+this list is absent from the connection. This is the check to run before
+concluding a v1 member "must be in there somewhere": if the named BOOLs account
+for all 16 bits, they do not.
+
+**Do not drive both the raw INT and the named BOOLs on the same word.** That is
+two writers on one tag.
+
+### 9.5 `CmndAck1` / `CmndAck2` have no replacement bit
+
+The v1 Floating Point module exposes **two** acknowledge bits, `CmndAck1` and
+`CmndAck2`, in the `CMD_Response` high byte. Treat them as a **2-bit field**,
+not two independent flags — the pair is read together.
+
+Command acknowledge is a Floating Point mechanism. FP multiplexes: one command
+word, and the returned 32-bit value depends on what was asked for, so the
+terminal must echo which command it is answering. Integer/Divisions does not
+multiplex — the selector is the three `Select` bits and the value returns in one
+`Weight` INT. There is nothing to acknowledge, and neither bit exists on the
+connection.
+
+**UNCONFIRMED:** the encoding of the `CmndAck1`/`CmndAck2` pair (which of the
+four values means accepted, in-progress, rejected), and whether this pair is the
+same thing as the two Data Integrity bits MT tells you to use in Floating Point
+mode, or a separate field in the same byte. Not established. If the port stays
+on FP, read the `CMD_Response` breakdown in 64057518 before relying on either.
+
+Port it by intent, not by name:
+
+- **Used as a data gate** ("don't read until coherent") → `UpdateInProgress`
+  (with `DataOk`). Closest available swap. Two bits become one; if the v1 logic
+  branched on the *value* of the pair rather than merely on it being set, that
+  distinction is gone.
+- **Used as a handshake** ("command landed, advance the sequence") → no bit does
+  this. Rebuild it as a readback compare (§9.6). The information does not exist
+  on this connection.
+
+Substituting `UpdateInProgress` for a handshake use of `CmndAck1`/`2` compiles
+clean and advances the sequence on data that was never confirmed. That is the
+failure mode to watch for in this port.
+
+### 9.6 Load-target sequence with readback confirmation
+
+```
+1. MOV  target            -> IND780_Float:O.Slot1.Weight
+2. Pulse                     IND780_Float:O.Slot1.LoadTarget      (0->1)
+3. Set  Select1/2/3 = 4                                  (select target readback)
+4. Wait NOT IND780_Float:I.Slot1.UpdateInProgress
+        AND IND780_Float:I.Slot1.DataOk
+5. CMP  IND780_Float:I.Slot1.Weight = target
+        match    -> target accepted; proceed to AbortStartTarget = 1
+        mismatch -> fault on timeout; do NOT start
+```
+
+Step 5 replaces the ack, and is the stronger check: an acknowledge says the
+terminal heard the command, a readback says it holds the right number. On a
+target that drives a truck load, verify the value.
+
+Same shape for tare — pulse `Tare`, set the selector to tare, wait for clean
+data, read `Weight` back, and record **that** value as the BOL tare.
+
+### 9.7 The ±32,767 ceiling is live on this module
+
+`Weight` is a single 16-bit signed INT. In **Integer** sub-mode a 45,000 lb
+target does not fit. In **Divisions** sub-mode it does (45,000 lb at a 20 lb
+division = 2,250).
+
+Two things must be settled and written down:
+
+1. Which sub-mode the terminal is configured for.
+2. Whether CTM sends pounds or divisions, and where the conversion and its
+   rounding live — one place only.
+
+If the ported example code assumed floating-point engineering units, changing
+the **module definition** to Floating Point may be cheaper than rewriting to
+INTDIV, and removes the ceiling. That regenerates the module-defined tags
+again, so decide before doing the port, not after.
+
+---
+
+## 10. Open items before this is buildable
 
 1. Confirm every bit above against the controlling revision of 64057518 for the
    installed fieldbus option.
