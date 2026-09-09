@@ -113,6 +113,15 @@ try {
     $limit = if ($Full) { $isoSize } else { [Math]::Min(64MB, $isoSize) }
     Write-Info ("Comparing {0}{1}..." -f (Format-Bytes $limit), $(if ($Full) { '' } else { ' (pass -Full for the whole image)' }))
 
+    # Everything below this offset is partition metadata - protective MBR, GPT header,
+    # GPT entry array. Windows REWRITES it the moment the stick comes back online, to
+    # make the backup-LBA and last-usable-LBA span the physical device instead of the
+    # 1.7 GB image. On a good 28.9 GB write that is ~500 bytes of legitimate difference,
+    # so comparing it byte-for-byte reports a perfect stick as corrupt. The image proper
+    # starts at the ISO9660 primary volume descriptor at 0x8000, and from there on any
+    # difference is real. Metadata differences are counted and reported, not failed.
+    $MetadataBytes = 32768
+
     $null = $src.Seek(0, [System.IO.SeekOrigin]::Begin)
     $null = $dev.Seek(0, [System.IO.SeekOrigin]::Begin)
 
@@ -121,6 +130,7 @@ try {
     $b = New-Object byte[] $bufSize
     $done = 0L
     $mismatchAt = -1L
+    $metaDiff = 0L
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
     while ($done -lt $limit -and $mismatchAt -lt 0) {
@@ -138,7 +148,11 @@ try {
         $cmp = [Math]::Min($ra, $rb)
 
         for ($i = 0; $i -lt $cmp; $i++) {
-            if ($a[$i] -ne $b[$i]) { $mismatchAt = $done + $i; break }
+            if ($a[$i] -ne $b[$i]) {
+                $abs = $done + $i
+                if ($abs -lt $MetadataBytes) { $metaDiff++ }   # expected; keep going
+                else { $mismatchAt = $abs; break }
+            }
         }
         $done += $cmp
 
@@ -151,10 +165,14 @@ try {
     $sw.Stop()
 
     if ($mismatchAt -ge 0) {
-        Write-Bad ("Content differs at byte {0} ({1} in)" -f $mismatchAt, (Format-Bytes $mismatchAt))
+        Write-Bad ("Image content differs at byte {0} ({1} in)" -f $mismatchAt, (Format-Bytes $mismatchAt))
         $failed = $true
     } else {
-        Write-Ok ("{0} identical to the ISO ({1:mm\:ss})" -f (Format-Bytes $done), $sw.Elapsed)
+        Write-Ok ("{0} of image content identical to the ISO ({1:mm\:ss})" -f (Format-Bytes $done), $sw.Elapsed)
+    }
+    if ($metaDiff -gt 0) {
+        Write-Info ("{0} bytes differ in the partition metadata below {1} - expected: Windows" -f $metaDiff, (Format-Bytes $MetadataBytes))
+        Write-Info 'rewrites the GPT to span the whole stick when it remounts. Not corruption.'
     }
 }
 finally {
