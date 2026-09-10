@@ -1,0 +1,144 @@
+# =============================================================================
+# Red River DTN & PLC Upgrade - Network Site Inventory
+# =============================================================================
+# Single source of truth for the Cisco switch configuration generator.
+# Edit THIS file, then re-run:  python3 network/tools/gen_switch_configs.py
+#
+# Every value marked  <<VERIFY>>  is an engineering assumption that must be
+# confirmed against the approved IFC drawings before the config is loaded.
+# =============================================================================
+
+project:
+  name: "Red River DTN & PLC Upgrade"
+  doc_id: "RR-NET-001"
+  revision: "A"
+  status: "ISSUED FOR REVIEW"
+  cable_schedule_ref: "Red_River_DTN_Cable_Schedule.md"
+
+# --- Global services -------------------------------------------------------
+globals:
+  domain_name: "redriver.local"            # <<VERIFY>>
+  ntp_servers:                             # <<VERIFY>>
+    - 10.14.30.1
+  syslog_servers:                          # <<VERIFY>>
+    - 10.14.30.50
+  timezone: { name: "CST", offset_hours: -6 }
+  dst: { name: "CDT", offset_minutes: 60 }
+  snmp:
+    v3_group: "RR-RO"
+    v3_user: "rr-monitor"
+  banner: |
+    ** AUTHORIZED ACCESS ONLY **
+    Red River Terminal - CTM Process Control Network.
+    This is a control-system asset. Unauthorized access is prohibited and
+    all activity is logged. Disconnect now if you are not authorized.
+
+# --- VLAN plan -------------------------------------------------------------
+# NOTE: Layer 2 only at the terminal. All inter-VLAN routing happens at the
+# existing plant core / firewall. These switches have ONE SVI (management).
+vlans:
+  - { id: 10,  name: CTM_KIOSK,     subnet: "10.14.10.0/24", gateway: "10.14.10.1", desc: "CTM kiosks + CTM edge gateway" }
+  - { id: 20,  name: PLC_CTRL,      subnet: "10.14.20.0/24", gateway: "10.14.20.1", desc: "CTMPLCP PLCs, HMIs, EtherNet/IP" }
+  - { id: 30,  name: NET_MGMT,      subnet: "10.14.30.0/24", gateway: "10.14.30.1", desc: "Switch + radio management" }
+  - { id: 99,  name: NATIVE_UNUSED, subnet: null,            gateway: null,        desc: "Trunk native VLAN - carries no hosts" }
+  - { id: 999, name: PARKING,       subnet: null,            gateway: null,        desc: "Shutdown/unused access ports" }
+
+trunk_allowed_vlans: [10, 20, 30]
+native_vlan: 99
+parking_vlan: 999
+mgmt_vlan: 30
+
+# --- Spanning tree ---------------------------------------------------------
+spanning_tree:
+  mode: "rapid-pvst"
+  root_primary: "SW-NT-PLC-01"     # priority 4096
+  root_secondary: "SW-ST-PLC-01"   # priority 8192
+
+# --- Switches --------------------------------------------------------------
+# Port model: Cisco IE-3300-8T2S (IOS-XE)
+#   Gi1/1 - Gi1/2  = 1G SFP uplinks
+#   Gi1/3 - Gi1/10 = 10/100/1000 copper downlinks
+#
+# port roles: uplink_trunk | downlink_trunk | radio_trunk | kiosk | plc | server | parking
+switches:
+
+  - name: "SW-NT-PLC-01"
+    site: "North Terminal"
+    location: "CTMPLCP-NT (North Terminal CTM PLC Panel)"
+    platform: "IE-3300-8T2S"
+    mgmt_ip: "10.14.30.11"
+    mgmt_mask: "255.255.255.0"
+    stp_priority: 4096
+    ports:
+      - { id: "GigabitEthernet1/1", role: uplink_trunk,   desc: "TRUNK -> Plant Core / DTN WAN router",         cable: "EXISTING", media: fiber,  peer: "PLANT-CORE" }
+      - { id: "GigabitEthernet1/2", role: downlink_trunk, desc: "TRUNK -> SW-NT-JB-01 Gi1/1 (pipe rack)",       cable: "E-0107",   media: fiber,  peer: "SW-NT-JB-01", root_guard: true }
+      - { id: "GigabitEthernet1/3", role: plc,            desc: "CTMPLCP-NT CompactLogix 5069",                 cable: "PANEL",    ip: "10.14.20.11" }
+      - { id: "GigabitEthernet1/4", role: plc,            desc: "CTMPLCP-NT panel HMI / PanelView",             cable: "PANEL",    ip: "10.14.20.12" }
+      - { id: "GigabitEthernet1/5", role: server,         desc: "CTM edge gateway (terminal server)",           cable: "PANEL",    ip: "10.14.10.5" }
+      - { id: "GigabitEthernet1/6", role: parking,        desc: "SPARE" }
+      - { id: "GigabitEthernet1/7", role: parking,        desc: "SPARE" }
+      - { id: "GigabitEthernet1/8", role: parking,        desc: "SPARE" }
+      - { id: "GigabitEthernet1/9", role: parking,        desc: "SPARE" }
+      - { id: "GigabitEthernet1/10", role: parking,       desc: "SPARE - reserve for laptop/console access" }
+
+  - name: "SW-NT-JB-01"
+    site: "North Terminal"
+    location: "Junction Box, North Pipe Rack (top of structure)"
+    platform: "IE-3300-8T2S"
+    mgmt_ip: "10.14.30.12"
+    mgmt_mask: "255.255.255.0"
+    stp_priority: 32768
+    ports:
+      - { id: "GigabitEthernet1/1", role: uplink_trunk, desc: "TRUNK -> SW-NT-PLC-01 Gi1/2 (fiber uplink)", cable: "E-0107", media: fiber, peer: "SW-NT-PLC-01", loop_guard: true }
+      - { id: "GigabitEthernet1/2", role: parking,      desc: "SPARE SFP - reserved for future redundant ring" }
+      - { id: "GigabitEthernet1/3", role: kiosk, desc: "Terminal Kiosk NT-01", cable: "E-0101", ip: "10.14.10.11" }
+      - { id: "GigabitEthernet1/4", role: kiosk, desc: "Terminal Kiosk NT-02", cable: "E-0102", ip: "10.14.10.12" }
+      - { id: "GigabitEthernet1/5", role: kiosk, desc: "Terminal Kiosk NT-03", cable: "E-0103", ip: "10.14.10.13" }
+      - { id: "GigabitEthernet1/6", role: kiosk, desc: "Terminal Kiosk NT-04", cable: "E-0104", ip: "10.14.10.14" }
+      - { id: "GigabitEthernet1/7", role: kiosk, desc: "Terminal Kiosk NT-05", cable: "E-0105", ip: "10.14.10.15" }
+      - { id: "GigabitEthernet1/8", role: kiosk, desc: "Terminal Kiosk NT-06", cable: "E-0106", ip: "10.14.10.16" }
+      - { id: "GigabitEthernet1/9",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/10", role: parking, desc: "SPARE - reserve for laptop/console access" }
+
+  - name: "SW-ST-PLC-01"
+    site: "South Terminal"
+    location: "CTMPLCP-ST (South Terminal CTM PLC Panel), office bldg - Dorr Ave / Conway Blvd"
+    platform: "IE-3300-8T2S"
+    mgmt_ip: "10.14.30.21"
+    mgmt_mask: "255.255.255.0"
+    stp_priority: 8192
+    ports:
+      - { id: "GigabitEthernet1/1", role: uplink_trunk, desc: "TRUNK -> Plant Core / North Terminal", cable: "EXISTING", media: fiber, peer: "PLANT-CORE" }
+      - { id: "GigabitEthernet1/2", role: parking,      desc: "SPARE SFP" }
+      - { id: "GigabitEthernet1/3", role: radio_trunk,  desc: "TRUNK -> Proxim QB-8200 BSU (link to South Shop/MCC)", cable: "PANEL", peer: "RADIO-BSU-01", radio_vlans: [20, 30], root_guard: true }
+      - { id: "GigabitEthernet1/4", role: kiosk, desc: "Terminal Kiosk ST-01", cable: "E-0201", ip: "10.14.10.21" }
+      - { id: "GigabitEthernet1/5", role: kiosk, desc: "Terminal Kiosk ST-02", cable: "E-0202", ip: "10.14.10.22" }
+      - { id: "GigabitEthernet1/6", role: plc,   desc: "CTMPLCP-ST CompactLogix 5069", cable: "PANEL", ip: "10.14.20.21" }
+      - { id: "GigabitEthernet1/7", role: plc,   desc: "CTMPLCP-ST panel HMI / PanelView", cable: "PANEL", ip: "10.14.20.22" }
+      - { id: "GigabitEthernet1/8",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/9",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/10", role: parking, desc: "SPARE - reserve for laptop/console access" }
+
+  - name: "SW-MCC-01"
+    site: "South Shop / MCC"
+    location: "South Shop MCC Panel"
+    platform: "IE-3300-8T2S"
+    mgmt_ip: "10.14.30.31"
+    mgmt_mask: "255.255.255.0"
+    stp_priority: 32768
+    ports:
+      - { id: "GigabitEthernet1/1", role: parking, desc: "SPARE SFP" }
+      - { id: "GigabitEthernet1/2", role: parking, desc: "SPARE SFP" }
+      - { id: "GigabitEthernet1/3", role: radio_trunk, desc: "TRUNK -> Proxim QB-8200 SU (link to South Terminal)", cable: "E-0301", peer: "RADIO-SU-01", radio_vlans: [20, 30], loop_guard: true }
+      - { id: "GigabitEthernet1/4", role: plc, desc: "South Shop MCC PLC", cable: "PANEL", ip: "10.14.20.31" }
+      - { id: "GigabitEthernet1/5",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/6",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/7",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/8",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/9",  role: parking, desc: "SPARE" }
+      - { id: "GigabitEthernet1/10", role: parking, desc: "SPARE - reserve for laptop/console access" }
+
+# --- Wireless bridge (non-Cisco, documented for completeness) --------------
+radios:
+  - { name: "RADIO-BSU-01", model: "Proxim Tsunami QB-8200", role: "BSU / Master", site: "South Terminal", mgmt_ip: "10.14.30.41", peer: "RADIO-SU-01" }
+  - { name: "RADIO-SU-01",  model: "Proxim Tsunami QB-8200", role: "SU / Slave",   site: "South Shop / MCC", mgmt_ip: "10.14.30.42", peer: "RADIO-BSU-01", cable: "E-0301" }

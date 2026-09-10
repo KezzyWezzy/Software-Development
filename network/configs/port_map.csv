@@ -1,0 +1,41 @@
+switch,site,port,role,vlan,cable_id,device,ip
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/1,uplink_trunk,"10,20,30",EXISTING,TRUNK -> Plant Core / DTN WAN router,
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/2,downlink_trunk,"10,20,30",E-0107,TRUNK -> SW-NT-JB-01 Gi1/1 (pipe rack),
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/3,plc,20,PANEL,CTMPLCP-NT CompactLogix 5069,10.14.20.11
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/4,plc,20,PANEL,CTMPLCP-NT panel HMI / PanelView,10.14.20.12
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/5,server,10,PANEL,CTM edge gateway (terminal server),10.14.10.5
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/6,parking,999,,SPARE,
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/7,parking,999,,SPARE,
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/8,parking,999,,SPARE,
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/9,parking,999,,SPARE,
+SW-NT-PLC-01,North Terminal,GigabitEthernet1/10,parking,999,,SPARE - reserve for laptop/console access,
+SW-NT-JB-01,North Terminal,GigabitEthernet1/1,uplink_trunk,"10,20,30",E-0107,TRUNK -> SW-NT-PLC-01 Gi1/2 (fiber uplink),
+SW-NT-JB-01,North Terminal,GigabitEthernet1/2,parking,999,,SPARE SFP - reserved for future redundant ring,
+SW-NT-JB-01,North Terminal,GigabitEthernet1/3,kiosk,10,E-0101,Terminal Kiosk NT-01,10.14.10.11
+SW-NT-JB-01,North Terminal,GigabitEthernet1/4,kiosk,10,E-0102,Terminal Kiosk NT-02,10.14.10.12
+SW-NT-JB-01,North Terminal,GigabitEthernet1/5,kiosk,10,E-0103,Terminal Kiosk NT-03,10.14.10.13
+SW-NT-JB-01,North Terminal,GigabitEthernet1/6,kiosk,10,E-0104,Terminal Kiosk NT-04,10.14.10.14
+SW-NT-JB-01,North Terminal,GigabitEthernet1/7,kiosk,10,E-0105,Terminal Kiosk NT-05,10.14.10.15
+SW-NT-JB-01,North Terminal,GigabitEthernet1/8,kiosk,10,E-0106,Terminal Kiosk NT-06,10.14.10.16
+SW-NT-JB-01,North Terminal,GigabitEthernet1/9,parking,999,,SPARE,
+SW-NT-JB-01,North Terminal,GigabitEthernet1/10,parking,999,,SPARE - reserve for laptop/console access,
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/1,uplink_trunk,"10,20,30",EXISTING,TRUNK -> Plant Core / North Terminal,
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/2,parking,999,,SPARE SFP,
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/3,radio_trunk,"20,30",PANEL,TRUNK -> Proxim QB-8200 BSU (link to South Shop/MCC),
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/4,kiosk,10,E-0201,Terminal Kiosk ST-01,10.14.10.21
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/5,kiosk,10,E-0202,Terminal Kiosk ST-02,10.14.10.22
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/6,plc,20,PANEL,CTMPLCP-ST CompactLogix 5069,10.14.20.21
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/7,plc,20,PANEL,CTMPLCP-ST panel HMI / PanelView,10.14.20.22
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/8,parking,999,,SPARE,
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/9,parking,999,,SPARE,
+SW-ST-PLC-01,South Terminal,GigabitEthernet1/10,parking,999,,SPARE - reserve for laptop/console access,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/1,parking,999,,SPARE SFP,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/2,parking,999,,SPARE SFP,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/3,radio_trunk,"20,30",E-0301,TRUNK -> Proxim QB-8200 SU (link to South Terminal),
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/4,plc,20,PANEL,South Shop MCC PLC,10.14.20.31
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/5,parking,999,,SPARE,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/6,parking,999,,SPARE,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/7,parking,999,,SPARE,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/8,parking,999,,SPARE,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/9,parking,999,,SPARE,
+SW-MCC-01,South Shop / MCC,GigabitEthernet1/10,parking,999,,SPARE - reserve for laptop/console access,
