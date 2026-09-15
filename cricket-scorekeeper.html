@@ -1,0 +1,573 @@
+<title>Cricket Chalk</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Karla:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+  :root {
+    --bg: #EDE5D5;
+    --surface: #F8F3E9;
+    --surface-2: #E2D7C1;
+    --ink: #1B1712;
+    --ink-soft: #6C6153;
+    --line: #CDC0A7;
+    --red: #A8232B;
+    --green: #1E6B48;
+    --brass: #B8862F;
+    --chalk: #1B1712;
+    --shadow: 0 1px 0 rgba(27,23,18,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131110;
+      --surface: #1D1A16;
+      --surface-2: #272219;
+      --ink: #F1E9D9;
+      --ink-soft: #988D7C;
+      --line: #383126;
+      --red: #D9474F;
+      --green: #43A377;
+      --brass: #D9A441;
+      --chalk: #F1E9D9;
+      --shadow: 0 1px 0 rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131110;
+    --surface: #1D1A16;
+    --surface-2: #272219;
+    --ink: #F1E9D9;
+    --ink-soft: #988D7C;
+    --line: #383126;
+    --red: #D9474F;
+    --green: #43A377;
+    --brass: #D9A441;
+    --chalk: #F1E9D9;
+    --shadow: 0 1px 0 rgba(0,0,0,.4);
+  }
+
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Karla', ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+  * { box-sizing: border-box; }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 18px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ---- masthead ---- */
+  .mast { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .mast h1 {
+    font-family: 'Oswald', 'Oswald Fallback', sans-serif;
+    font-weight: 600;
+    font-size: clamp(26px, 7vw, 34px);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1;
+  }
+  .mast h1 em {
+    font-style: normal;
+    color: var(--red);
+  }
+  .tagline {
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    margin: 4px 0 0;
+  }
+
+  /* ---- generic small controls ---- */
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--surface); }
+  .seg button {
+    font: 600 11px/1 'Karla', sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    background: none;
+    border: 0;
+    border-right: 1px solid var(--line);
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .seg button:focus-visible, .btn:focus-visible, .cell:focus-visible, .name:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+
+  .setup { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .setup .lbl { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+
+  .btn {
+    font: 600 12px/1 'Karla', sans-serif;
+    letter-spacing: .06em;
+    padding: 10px 14px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--ink-soft); }
+  .btn:disabled { opacity: .38; cursor: default; }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+  /* ---- player tiles ---- */
+  .tiles { display: grid; gap: 10px; }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 12px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 2px 10px;
+    box-shadow: var(--shadow);
+  }
+  .tile.active { border-top-color: var(--red); background: var(--surface-2); }
+  .tile.winner { border-top-color: var(--green); }
+  .name {
+    font: 600 14px/1.2 'Karla', sans-serif;
+    background: none;
+    border: 0;
+    border-bottom: 1px dashed transparent;
+    color: var(--ink);
+    padding: 2px 0;
+    width: 100%;
+    min-width: 0;
+  }
+  .name:hover { border-bottom-color: var(--line); }
+  .score {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 34px;
+    line-height: .9;
+    font-variant-numeric: tabular-nums;
+    grid-row: span 2;
+    text-align: right;
+  }
+  .meta {
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: .06em;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .darts { display: inline-flex; gap: 4px; align-items: center; }
+  .pip { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink-soft); }
+  .pip.spent { background: var(--red); border-color: var(--red); }
+
+  /* ---- the chalkboard ---- */
+  .board {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .row {
+    display: grid;
+    align-items: stretch;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: 0; }
+  .row.bull .num { color: var(--red); }
+  .row.shut { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+  .num {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 21px;
+    letter-spacing: .02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-2);
+    border-inline: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .row.shut .num { color: var(--ink-soft); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .cell {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 6px 4px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--chalk);
+  }
+  .cell:disabled { cursor: default; }
+  .cell.live:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+  .cell.idle { opacity: .55; }
+  .cell svg { display: block; }
+  .cell .stroke { stroke: var(--chalk); stroke-width: 3.2; stroke-linecap: round; fill: none; transition: stroke-dashoffset .18s ease; }
+  .cell .ring { stroke: var(--green); stroke-width: 2.6; fill: none; }
+  .cell .ghost { stroke: var(--ink-soft); opacity: .22; }
+
+  /* ---- throw controls ---- */
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .controls .group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .mult button { min-width: 44px; }
+  .mult button[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #FFF8EC; }
+
+  .legend {
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    margin: 0;
+  }
+  .legend b { color: var(--ink); font-weight: 600; }
+  .legend ul { margin: 6px 0 0; padding-left: 18px; }
+  .legend li { margin-bottom: 3px; }
+
+  /* ---- win banner ---- */
+  .win {
+    border: 1px solid var(--green);
+    border-left: 5px solid var(--green);
+    background: color-mix(in srgb, var(--green) 10%, var(--surface));
+    border-radius: 3px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .win strong {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .win span { font-size: 13px; color: var(--ink-soft); display: block; }
+
+  @media (max-width: 420px) {
+    .num { font-size: 18px; }
+    .score { font-size: 28px; }
+    .cell { min-height: 46px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <h1>Cricket <em>Chalk</em></h1>
+      <p class="tagline" id="modeline">20 down to 15 &amp; bull</p>
+    </div>
+    <div class="setup">
+      <span class="lbl">Players</span>
+      <span class="seg" id="countSeg">
+        <button type="button" data-count="2">2</button>
+        <button type="button" data-count="3">3</button>
+        <button type="button" data-count="4">4</button>
+      </span>
+      <span class="lbl">Rules</span>
+      <span class="seg" id="modeSeg">
+        <button type="button" data-mode="standard">Standard</button>
+        <button type="button" data-mode="cutthroat">Cut-throat</button>
+      </span>
+    </div>
+  </header>
+
+  <div class="win" id="win" hidden>
+    <div>
+      <strong id="winName">—</strong>
+      <span id="winDetail"></span>
+    </div>
+    <button class="btn primary" type="button" id="rematch">Rematch</button>
+  </div>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="board" id="board"></section>
+
+  <section class="controls">
+    <div class="group">
+      <span class="seg mult" id="multSeg">
+        <button type="button" data-mult="1">Single</button>
+        <button type="button" data-mult="2">Double</button>
+        <button type="button" data-mult="3">Treble</button>
+      </span>
+      <button class="btn" type="button" id="miss">Miss</button>
+      <button class="btn" type="button" id="endTurn">End turn</button>
+    </div>
+    <div class="group">
+      <button class="btn" type="button" id="undo">Undo</button>
+      <button class="btn" type="button" id="reset">New game</button>
+    </div>
+  </section>
+
+  <div class="legend">
+    <p style="margin:0"><b>How to keep score.</b> Tap a number in the throwing player's column to chalk a mark — pick Double or Treble first and one tap chalks two or three.</p>
+    <ul>
+    <li><b>/ ✕ ⊗</b> — one, two, three marks. Three marks closes the number for that player.</li>
+    <li>Once you've closed a number, further hits score its face value (bull = 25) until every opponent closes it too.</li>
+    <li><b>Standard:</b> the points go to you. <b>Cut-throat:</b> they go onto every opponent still open on that number — low score wins.</li>
+    <li>Win by closing all seven numbers with a score that beats the field.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  var NUMBERS = [20, 19, 18, 17, 16, 15, 25];
+  var STORE = 'cricket-chalk-v1';
+
+  var state = null;
+  var history = [];
+  var mult = 1;
+
+  function blankPlayer(name) {
+    return { name: name, marks: { 20: 0, 19: 0, 18: 0, 17: 0, 16: 0, 15: 0, 25: 0 }, score: 0, darts: 0, hits: 0 };
+  }
+
+  function newGame(count, mode, names) {
+    var defaults = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
+    var players = [];
+    for (var i = 0; i < count; i++) players.push(blankPlayer((names && names[i]) || defaults[i]));
+    return { players: players, mode: mode, turn: 0, thrown: 0, winner: null };
+  }
+
+  function clone(s) { return JSON.parse(JSON.stringify(s)); }
+
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE);
+      if (!raw) return null;
+      var s = JSON.parse(raw);
+      if (!s || !Array.isArray(s.players) || !s.players.length) return null;
+      return s;
+    } catch (e) { return null; }
+  }
+
+  function label(n) { return n === 25 ? 'Bull' : String(n); }
+  function closedBy(p, n) { return p.marks[n] >= 3; }
+  function closedByAll(n) { return state.players.every(function (p) { return closedBy(p, n); }); }
+  function closedCount(p) { return NUMBERS.filter(function (n) { return closedBy(p, n); }).length; }
+  function mpr(p) { return p.darts ? (p.hits / (p.darts / 3)) : 0; }
+
+  function checkWinner() {
+    var live = state.players.filter(function (p) { return closedCount(p) === NUMBERS.length; });
+    if (!live.length) return null;
+    var scores = state.players.map(function (p) { return p.score; });
+    var best = state.mode === 'cutthroat' ? Math.min.apply(null, scores) : Math.max.apply(null, scores);
+    var won = live.filter(function (p) { return p.score === best; });
+    return won.length === 1 ? won[0] : null;
+  }
+
+  function throwDart(pi, n) {
+    if (state.winner || pi !== state.turn || state.thrown >= 3) return;
+    history.push(clone(state));
+    if (history.length > 60) history.shift();
+
+    var p = state.players[pi];
+    for (var m = 0; m < mult; m++) {
+      p.hits++;
+      if (p.marks[n] < 3) { p.marks[n]++; continue; }
+      if (closedByAll(n)) continue;
+      if (state.mode === 'cutthroat') {
+        state.players.forEach(function (o) { if (o !== p && !closedBy(o, n)) o.score += n; });
+      } else {
+        p.score += n;
+      }
+    }
+    p.darts++;
+    state.thrown++;
+    state.winner = (function () { var w = checkWinner(); return w ? state.players.indexOf(w) : null; })();
+    if (state.winner === null && state.thrown >= 3) nextTurn(false);
+    render();
+    save();
+  }
+
+  function miss() {
+    if (state.winner || state.thrown >= 3) return;
+    history.push(clone(state));
+    state.players[state.turn].darts++;
+    state.thrown++;
+    if (state.thrown >= 3) nextTurn(false);
+    render();
+    save();
+  }
+
+  function nextTurn(record) {
+    if (state.winner !== null) return;
+    if (record) {
+      history.push(clone(state));
+      var p = state.players[state.turn];
+      p.darts += (3 - state.thrown);
+    }
+    state.turn = (state.turn + 1) % state.players.length;
+    state.thrown = 0;
+  }
+
+  function undo() {
+    if (!history.length) return;
+    state = history.pop();
+    render();
+    save();
+  }
+
+  /* ---------- rendering ---------- */
+
+  function markSvg(count) {
+    var slash = 'M9 33 L31 11';
+    var back = 'M9 11 L31 33';
+    var s = '<svg width="40" height="44" viewBox="0 0 40 44" aria-hidden="true">';
+    if (count === 0) s += '<path class="stroke ghost" d="' + slash + '"/>';
+    if (count >= 1) s += '<path class="stroke" d="' + slash + '"/>';
+    if (count >= 2) s += '<path class="stroke" d="' + back + '"/>';
+    if (count >= 3) s += '<circle class="ring" cx="20" cy="22" r="16"/>';
+    s += '</svg>';
+    return s;
+  }
+
+  function renderTiles() {
+    var el = document.getElementById('tiles');
+    el.style.gridTemplateColumns = state.players.length > 2 ? 'repeat(auto-fit, minmax(150px, 1fr))' : 'repeat(2, 1fr)';
+    el.innerHTML = state.players.map(function (p, i) {
+      var pips = '';
+      for (var d = 0; d < 3; d++) pips += '<i class="pip' + (i === state.turn && d < state.thrown ? ' spent' : '') + '"></i>';
+      return '<div class="tile' + (i === state.turn && state.winner === null ? ' active' : '') + (state.winner === i ? ' winner' : '') + '">' +
+        '<input class="name" id="name-' + i + '" data-idx="' + i + '" value="' + p.name.replace(/"/g, '&quot;') + '" aria-label="Player ' + (i + 1) + ' name" maxlength="14">' +
+        '<div class="score">' + p.score + '</div>' +
+        '<div class="meta">' +
+          '<span>' + closedCount(p) + '/7 closed</span>' +
+          '<span>' + mpr(p).toFixed(2) + ' MPR</span>' +
+          (i === state.turn && state.winner === null ? '<span class="darts">' + pips + '</span>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    el.querySelectorAll('.name').forEach(function (input) {
+      input.addEventListener('change', function () {
+        state.players[+this.dataset.idx].name = this.value.trim() || ('Player ' + (+this.dataset.idx + 1));
+        save();
+        renderWin();
+      });
+    });
+  }
+
+  function renderBoard() {
+    var two = state.players.length === 2;
+    var cols = two ? '1fr 78px 1fr' : '68px repeat(' + state.players.length + ', 1fr)';
+    var board = document.getElementById('board');
+
+    board.innerHTML = NUMBERS.map(function (n) {
+      var shut = closedByAll(n);
+      var cells = state.players.map(function (p, i) {
+        var live = state.winner === null && i === state.turn && state.thrown < 3;
+        return '<button class="cell ' + (live ? 'live' : 'idle') + '" data-p="' + i + '" data-n="' + n + '"' +
+          (live ? '' : ' disabled') +
+          ' aria-label="' + p.name + ', ' + label(n) + ', ' + p.marks[n] + ' marks">' + markSvg(p.marks[n]) + '</button>';
+      });
+      var num = '<div class="num">' + label(n) + '</div>';
+      var inner = two ? cells[0] + num + cells[1] : num + cells.join('');
+      return '<div class="row' + (n === 25 ? ' bull' : '') + (shut ? ' shut' : '') + '" style="grid-template-columns:' + cols + '">' + inner + '</div>';
+    }).join('');
+
+    board.querySelectorAll('.cell').forEach(function (btn) {
+      btn.addEventListener('click', function () { throwDart(+this.dataset.p, +this.dataset.n); });
+    });
+  }
+
+  function renderWin() {
+    var box = document.getElementById('win');
+    if (state.winner === null) { box.hidden = true; return; }
+    var p = state.players[state.winner];
+    box.hidden = false;
+    document.getElementById('winName').textContent = p.name + ' takes it';
+    document.getElementById('winDetail').textContent =
+      'All seven closed on ' + p.score + ' points · ' + mpr(p).toFixed(2) + ' marks per round';
+  }
+
+  function renderChrome() {
+    document.querySelectorAll('#countSeg button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(+b.dataset.count === state.players.length));
+    });
+    document.querySelectorAll('#modeSeg button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode));
+    });
+    document.querySelectorAll('#multSeg button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(+b.dataset.mult === mult));
+    });
+    document.getElementById('modeline').textContent = state.mode === 'cutthroat'
+      ? 'Cut-throat · points go to the opposition · low score wins'
+      : '20 down to 15 & bull · high score wins';
+    document.getElementById('undo').disabled = !history.length;
+    document.getElementById('miss').disabled = state.winner !== null || state.thrown >= 3;
+    document.getElementById('endTurn').disabled = state.winner !== null;
+  }
+
+  function render() {
+    renderTiles();
+    renderBoard();
+    renderWin();
+    renderChrome();
+  }
+
+  /* ---------- wiring ---------- */
+
+  document.getElementById('countSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    state = newGame(+b.dataset.count, state.mode, state.players.map(function (p) { return p.name; }));
+    history = []; render(); save();
+  });
+  document.getElementById('modeSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    state = newGame(state.players.length, b.dataset.mode, state.players.map(function (p) { return p.name; }));
+    history = []; render(); save();
+  });
+  document.getElementById('multSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    mult = +b.dataset.mult; renderChrome();
+  });
+  document.getElementById('miss').addEventListener('click', miss);
+  document.getElementById('endTurn').addEventListener('click', function () { nextTurn(true); render(); save(); });
+  document.getElementById('undo').addEventListener('click', undo);
+
+  function restart() {
+    state = newGame(state.players.length, state.mode, state.players.map(function (p) { return p.name; }));
+    history = []; render(); save();
+  }
+  document.getElementById('reset').addEventListener('click', restart);
+  document.getElementById('rematch').addEventListener('click', restart);
+
+  function start(seed) {
+    state = (seed && seed.state) || load() || newGame(2, 'standard');
+    if (seed && typeof seed.mult === 'number') mult = seed.mult;
+    render();
+  }
+
+  if (window.claude && window.claude.hot) {
+    window.claude.hot.snapshot(function () { return { state: state, mult: mult }; });
+    window.claude.hot.ready ? window.claude.hot.ready(start) : start(window.claude.hot.data);
+  } else {
+    start(null);
+  }
+})();
+</script>
