@@ -1,0 +1,285 @@
+<title>Gulf Coast LDS Sales Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~72rem) — summary band, then segment cards, wave tables, timeline, notes */
+:root {
+  --bg: #f6f7f8; --surface: #ffffff; --fg: #1d2329; --muted: #5b6670; --line: #dde2e6;
+  --accent: #b86a00;          /* pipeline-marker amber */
+  --accent-soft: #fbefdc;
+  --ok: #2f7d4f; --ok-soft: #e3f2e8; --warn: #9a6400; --warn-soft: #fbf0d9; --hold: #6b7480; --hold-soft: #eceff2;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #13171b; --surface: #1b2026; --fg: #e6eaee; --muted: #9aa5ae; --line: #2c333a;
+  --accent: #f0a63a; --accent-soft: #33281a;
+  --ok: #6cc28d; --ok-soft: #1c2e23; --warn: #e8b55a; --warn-soft: #33291a; --hold: #9aa5ae; --hold-soft: #262c32;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #13171b; --surface: #1b2026; --fg: #e6eaee; --muted: #9aa5ae; --line: #2c333a;
+  --accent: #f0a63a; --accent-soft: #33281a;
+  --ok: #6cc28d; --ok-soft: #1c2e23; --warn: #e8b55a; --warn-soft: #33291a; --hold: #9aa5ae; --hold-soft: #262c32;
+  color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 72rem; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: .005em; }
+h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.1; }
+h2 { font-size: 24px; line-height: 1.2; }
+h3 { font-size: 18px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.muted { color: var(--muted); }
+section { display: grid; gap: 16px; min-width: 0; }
+header { display: grid; gap: 12px; border-bottom: 3px solid var(--accent); padding-bottom: 24px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.stat { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; }
+.stat b { font: 600 24px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+
+.segs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.seg { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.seg h3 { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.seg ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+.pill { display: inline-block; font: 500 11px/1 var(--f-mono); letter-spacing: .04em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 3px; white-space: nowrap; }
+.p-ok { background: var(--ok-soft); color: var(--ok); }
+.p-warn { background: var(--warn-soft); color: var(--warn); }
+.p-hold { background: var(--hold-soft); color: var(--hold); }
+.p-acc { background: var(--accent-soft); color: var(--accent); }
+
+.wave { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; display: grid; min-width: 0; }
+.wave-head { padding: 16px; display: grid; gap: 6px; border-bottom: 1px solid var(--line); }
+.wave-head .row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 11px/1.2 var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td .sub { display: block; font-size: 12.5px; color: var(--muted); }
+
+.timeline { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.step { position: relative; padding: 0 0 22px 22px; display: grid; gap: 6px; }
+.step::before { content: ""; position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--accent); }
+.step .when { font: 500 12px/1 var(--f-mono); color: var(--accent); letter-spacing: .04em; }
+.step ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+.note { background: var(--accent-soft); border-radius: 6px; padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; }
+.note ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.two > * { min-width: 0; }
+code { font: 13px var(--f-mono); }
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">SpecFlow LDS + solar drone dock · Texas &amp; Louisiana</span>
+  <h1>Gulf Coast LDS Sales Plan</h1>
+  <p>Who to call first, what to offer each kind of operator, and the first 90 days. Built from PHMSA's 2025 annual report data for every regulated pipeline operator in Texas and Louisiana.</p>
+</header>
+
+<section>
+  <span class="eyebrow">The market we can reach</span>
+  <div class="stats">
+    <div class="stat"><b>782</b><span>operators with pipe in TX or LA</span></div>
+    <div class="stat"><b>89,267</b><span>miles of liquid pipeline (TX + LA)</span></div>
+    <div class="stat"><b>~6,200</b><span>liquid HCA miles in Louisiana</span></div>
+    <div class="stat"><b>176</b><span>liquid operators small enough for full drone coverage</span></div>
+    <div class="stat"><b>1–7</b><span>docks to cover a best-fit system end to end</span></div>
+  </div>
+  <p class="muted">Liquid lines are the main target because the LDS is built for them. Gas operators (127,000 miles in TX + LA, mostly gathering) are a second phase for the drone with a methane sensor.</p>
+</section>
+
+<section>
+  <span class="eyebrow">What we sell, by operator type</span>
+  <h2>Four offers</h2>
+  <div class="segs">
+    <div class="seg">
+      <h3>Full coverage <span class="pill p-ok">Tier A</span></h3>
+      <p class="muted">10–100 miles, small system overall</p>
+      <ul><li>LDS on the whole line plus 1–7 solar docks</li><li>The drone patrols the whole right-of-way and checks every LDS alarm</li><li>Replaces aircraft patrol</li></ul>
+    </div>
+    <div class="seg">
+      <h3>HCA segments + alarm checks <span class="pill p-warn">Tier B</span></h3>
+      <p class="muted">Over 100 miles</p>
+      <ul><li>Docks only at river crossings, towns and marsh</li><li>An LDS alarm sends the drone; live video in about 10 minutes</li><li>Sell on avoided false-alarm shutdowns</li></ul>
+    </div>
+    <div class="seg">
+      <h3>LDS only <span class="pill p-hold">Tier C</span></h3>
+      <p class="muted">Under 10 miles, refinery and terminal lines</p>
+      <ul><li>No drone needed inside the plant</li><li>Small deals that close fast</li><li>Refiners refer each other</li></ul>
+    </div>
+    <div class="seg">
+      <h3>Marsh &amp; offshore <span class="pill p-acc">Lead story</span></h3>
+      <p class="muted">Louisiana coast and Gulf gathering</p>
+      <ul><li>Trucks can't reach the line; boats and marsh buggies are slow</li><li>Sheen on water is easy to see from the air</li><li>Nearly every mile is HCA</li></ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Call lists</span>
+  <h2>Five waves</h2>
+  <p class="muted">HCA miles are from PHMSA Part B. For operators in several states they are split across states by mileage, so treat them as estimates. Texas HCA figures still need a re-run (see notes).</p>
+
+  <div class="wave">
+    <div class="wave-head">
+      <div class="row"><h3>Wave 1 · Warm lead and one-dock wins</h3><span class="pill p-ok">Weeks 1–4</span></div>
+      <p class="muted">Get a signed pilot and a reference customer fast.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Operator</th><th class="n">Miles</th><th class="n">HCA</th><th>Product</th><th class="n">Docks</th><th>Angle</th></tr></thead>
+      <tbody>
+        <tr><td><b>Genesis Energy</b><span class="sub">Pipeline Texas 94 TX · Offshore Holdings 79 TX + 50 LA · Pipeline USA 38 LA · Crude Oil 2 LA</span></td><td class="n">263</td><td class="n">—</td><td>Crude</td><td class="n">~18</td><td>Existing relationship. Start with one entity, then expand across four</td></tr>
+        <tr><td>Breton Sound Gathering</td><td class="n">11</td><td class="n">11</td><td>Crude</td><td class="n">1</td><td>All HCA, in the marsh. The ideal pilot site</td></tr>
+        <tr><td>Texas Petroleum Investment Co.</td><td class="n">11</td><td class="n">11</td><td>Crude</td><td class="n">1</td><td>All HCA, Louisiana. One dock</td></tr>
+        <tr><td>Placid Midstream<span class="sub">also Placid Pipeline, 9 mi refined (check whether same parent)</span></td><td class="n">16</td><td class="n">16</td><td>Crude</td><td class="n">2</td><td>All HCA. Refinery-linked</td></tr>
+        <tr><td>Port Arthur Terminal</td><td class="n">12</td><td class="n">12+</td><td>Crude</td><td class="n">1</td><td>Golden Triangle, all HCA</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="wave">
+    <div class="wave-head">
+      <div class="row"><h3>Wave 2 · Louisiana marsh and HCA-heavy independents</h3><span class="pill p-acc">Weeks 3–8</span></div>
+      <p class="muted">This is where the drone makes the strongest case.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Operator</th><th class="n">LA miles</th><th class="n">HCA</th><th>Product</th><th class="n">Docks</th></tr></thead>
+      <tbody>
+        <tr><td>MOEM Pipeline</td><td class="n">56</td><td class="n">53</td><td>Crude</td><td class="n">4</td></tr>
+        <tr><td>Chalmette Louisiana Liquids</td><td class="n">42</td><td class="n">42</td><td>HVL</td><td class="n">3</td></tr>
+        <tr><td>Collins Pipeline</td><td class="n">48</td><td class="n">38</td><td>Refined</td><td class="n">4</td></tr>
+        <tr><td>Panther Operating</td><td class="n">36</td><td class="n">36</td><td>Crude</td><td class="n">3</td></tr>
+        <tr><td>Ascension Pipeline</td><td class="n">32</td><td class="n">28</td><td>Refined</td><td class="n">3</td></tr>
+        <tr><td>Pipeline Technology</td><td class="n">28</td><td class="n">28</td><td>HVL, refined</td><td class="n">2</td></tr>
+        <tr><td>Cypress Interstate Pipeline</td><td class="n">27</td><td class="n">20</td><td>HVL</td><td class="n">2</td></tr>
+        <tr><td>Talos Energy + Talos Resources</td><td class="n">14</td><td class="n">12</td><td>Crude</td><td class="n">2</td></tr>
+        <tr><td>Guardian Decommissioning</td><td class="n">9</td><td class="n">9</td><td>Crude</td><td class="n">1</td></tr>
+        <tr><td>Curlew Midstream</td><td class="n">8</td><td class="n">8</td><td>Crude</td><td class="n">1</td></tr>
+        <tr><td>Main Pass Oil Gathering</td><td class="n">5</td><td class="n">5</td><td>Crude</td><td class="n">1</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="wave">
+    <div class="wave-head">
+      <div class="row"><h3>Wave 3 · Texas independents (full coverage)</h3><span class="pill p-ok">Weeks 6–10</span></div>
+      <p class="muted">Liquid operators with 10–100 Texas miles. Rank by HCA once Texas is re-run.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Operator</th><th class="n">TX miles</th><th>Product</th><th class="n">Docks</th></tr></thead>
+      <tbody>
+        <tr><td>Tivoli Services + Tivoli Midstream</td><td class="n">120</td><td>Crude, HVL</td><td class="n">8</td></tr>
+        <tr><td>Echo Canyon Pipeline</td><td class="n">83</td><td>Crude</td><td class="n">6</td></tr>
+        <tr><td>Advantage Pipeline</td><td class="n">69</td><td>Crude</td><td class="n">5</td></tr>
+        <tr><td>Lavaca Pipeline Co.</td><td class="n">66</td><td>HVL, refined</td><td class="n">5</td></tr>
+        <tr><td>Victoria Express Pipeline</td><td class="n">57</td><td>Crude</td><td class="n">4</td></tr>
+        <tr><td>Phoenix Park Energy Marketing</td><td class="n">57</td><td>HVL</td><td class="n">4</td></tr>
+        <tr><td>Gibson Energy Infrastructure</td><td class="n">55</td><td>Crude</td><td class="n">4</td></tr>
+        <tr><td>Trecora Pipeline</td><td class="n">55</td><td>Refined</td><td class="n">4</td></tr>
+        <tr><td>Beta Crude Connector</td><td class="n">41</td><td>Crude</td><td class="n">3</td></tr>
+        <tr><td>Max Midstream Texas</td><td class="n">21</td><td>Crude</td><td class="n">2</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="two">
+    <div class="wave">
+      <div class="wave-head">
+        <div class="row"><h3>Wave 4 · Mid-size, multi-entity</h3><span class="pill p-warn">Weeks 8–13</span></div>
+        <p class="muted">HCA-segment docks plus drone checks of LDS alarms. One parent company, several deals.</p>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Operator</th><th class="n">Miles</th><th class="n">HCA</th></tr></thead>
+        <tbody>
+          <tr><td>EnLink Processing (LA)</td><td class="n">689</td><td class="n">293</td></tr>
+          <tr><td>Delek, 3 entities (TX + LA)</td><td class="n">729</td><td class="n">—</td></tr>
+          <tr><td>Boardwalk, 3 liquid entities (LA)</td><td class="n">651</td><td class="n">377</td></tr>
+          <tr><td>Crescent Midstream (LA)</td><td class="n">458</td><td class="n">199</td></tr>
+          <tr><td>Harvest Midstream (LA)</td><td class="n">432</td><td class="n">219</td></tr>
+          <tr><td>Texoma Crude Oil Pipeline (TX)</td><td class="n">174</td><td class="n">—</td></tr>
+          <tr><td>Sentinel Midstream (LA)</td><td class="n">130</td><td class="n">88</td></tr>
+          <tr><td>LOOP LLC (LA)</td><td class="n">101</td><td class="n">29</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="wave">
+      <div class="wave-head">
+        <div class="row"><h3>Wave 5 · Refinery short lines</h3><span class="pill p-hold">Ongoing</span></div>
+        <p class="muted">LDS only. Short sales cycle, almost all HCA.</p>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Operator (LA)</th><th class="n">Miles</th></tr></thead>
+        <tbody>
+          <tr><td>Calumet Shreveport + Cotton Valley</td><td class="n">13.2</td></tr>
+          <tr><td>CITGO Petroleum (refinery)</td><td class="n">6.2</td></tr>
+          <tr><td>Calcasieu Refining</td><td class="n">5.4</td></tr>
+          <tr><td>Valero New Orleans + Meraux</td><td class="n">5.3</td></tr>
+          <tr><td>IMTT</td><td class="n">4.8</td></tr>
+          <tr><td>BR Port Services</td><td class="n">3.9</td></tr>
+          <tr><td>Chalmette Refining</td><td class="n">3.8</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="note">
+      <b>Hold for later: majors</b>
+      <p>ExxonMobil, Chevron, Shell, Motiva, CITGO Pipeline, Kinder Morgan, Enterprise, Energy Transfer, Phillips 66, Marathon, Colonial. They have in-house LDS teams and long procurement cycles. Approach them once two references are live.</p>
+    </div>
+    <div class="note">
+      <b>Phase 2: gas, with the methane drone</b>
+      <p>Atmos Energy Louisiana, Trans Louisiana Gas, Cheniere Creole Trail, Cameron Interstate, Enterprise Pelican. <b>Remove</b> Everline Compliance from the call list. It files reports for operators and doesn't own pipe, so approach it as a possible channel partner instead.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">First 90 days</span>
+  <h2>Timeline</h2>
+  <div class="timeline">
+    <div class="step"><span class="when">WEEKS 1–2</span><h3>Prepare and open with Genesis</h3>
+      <ul><li>Request a Genesis meeting and propose a pilot on one Louisiana segment</li><li>Build the one-page pitch and a demo: an LDS alarm automatically sends a drone (simulator)</li><li>Re-run the tool for Texas (<code>--states TX</code>) to get correct HCA miles</li><li>Find the control room and integrity managers for Waves 1–2</li></ul></div>
+    <div class="step"><span class="when">WEEKS 3–6</span><h3>Waves 1 and 2</h3>
+      <ul><li>Offer: a 90-day pilot with 1 dock and the LDS on a 10–15 mile HCA segment</li><li>Pilot success measures: time to confirm an alarm visually, false-alarm shutdowns avoided, patrol cost replaced</li><li>Start the FAA beyond-line-of-sight approval now. It takes the longest of anything here</li></ul></div>
+    <div class="step"><span class="when">WEEKS 6–10</span><h3>Wave 3 and refinery short lines</h3>
+      <ul><li>Texas independents: full-coverage proposals</li><li>Refineries: LDS-only quotes, pursued in parallel</li></ul></div>
+    <div class="step"><span class="when">WEEKS 8–13</span><h3>Wave 4 and pilot install</h3>
+      <ul><li>Multi-entity proposals sized to HCA segments</li><li>Install the first pilot dock, then publish a case study with real alarm-response times</li></ul></div>
+  </div>
+</section>
+
+<section class="two">
+  <div class="note" style="background: var(--surface); border: 1px solid var(--line);">
+    <b>Planning numbers (estimates)</b>
+    <ul>
+      <li>Dock with sensors and solar: about $60–90k each</li>
+      <li>Running cost: about $15–30k per dock per year</li>
+      <li>One dock covers about 15 miles of line</li>
+      <li>Value of an alarm check: a 100,000 bbl/day line loses about $10–30k for every hour it's shut down</li>
+    </ul>
+  </div>
+  <div class="note" style="background: var(--surface); border: 1px solid var(--line);">
+    <b>Data notes</b>
+    <ul>
+      <li>Source: PHMSA annual report data (2025 report year), mileage from the per-state breakdown parts</li>
+      <li>Louisiana figures use the corrected HCA source (Part B). Texas HCA figures came from an earlier run that undercounted, so re-run before ranking Texas by HCA</li>
+      <li>Gas mileage includes regulated gathering lines</li>
+      <li>"Docks" assumes full coverage. An HCA-only plan needs fewer</li>
+    </ul>
+  </div>
+</section>
+
+</div>
