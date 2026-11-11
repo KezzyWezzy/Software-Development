@@ -104,9 +104,12 @@ def total_col(cols: list[str]) -> str | None:
 
 
 def hca_col(cols: list[str]) -> str | None:
-    cands = [c for c in cols if "HCA" in c.upper() and "NON" not in c.upper()]
-    tot = [c for c in cands if "TOTAL" in c.upper()]
-    return (tot or cands or [None])[-1]
+    """Total HCA miles column. Requires TOTAL in the name and skips non-HCA /
+    outside-HCA columns (NON, NOT, NHCA, OUTSIDE)."""
+    bad = ("NON", "NOT", "NHCA", "OUTSIDE")
+    cands = [c for c in cols if "HCA" in c.upper() and "TOTAL" in c.upper()
+             and not any(b in c.upper() for b in bad)]
+    return (cands or [None])[-1]
 
 
 def load(path: Path, args) -> pd.DataFrame:
@@ -125,7 +128,10 @@ def load(path: Path, args) -> pd.DataFrame:
             continue
         m = {k: find_col(cols, k, None) for k in ("operator_id", "operator_name", "state", "commodity")}
         m["operator_id"] = args.operator_id_col or m["operator_id"]
-        m["state"] = args.state_col if args.state_col in cols else m["state"]
+        # Only STATE_NAME marks a per-state breakdown sheet; other *STATE* columns
+        # (e.g. the operator's office address on Part A) are not where pipe runs.
+        m["state"] = args.state_col if args.state_col in cols else \
+            next((c for c in cols if c.upper() in ("STATE_NAME", "STATE")), None)
         if not m["operator_id"]:
             continue
         name_col = args.operator_name_col if args.operator_name_col in cols else m["operator_name"]
@@ -182,6 +188,8 @@ def load(path: Path, args) -> pd.DataFrame:
         next(((d, x) for l2, d, x, _ in sums if x["hca"]), None)
     if hsrc:
         hd, hx = hsrc
+        hl = next(l2 for l2, d, x, _ in sums if d is hd)
+        print(f"  -> HCA miles from {hl.split(':')[-1]} / {hx['hca']}", file=sys.stderr)
         h = pd.DataFrame({"operator_id": hd[hx["operator_id"]],
                           "state": hd[hx["state"]].astype(str).str.strip().str.upper(),
                           "hca": pd.to_numeric(hd[hx["hca"]], errors="coerce").fillna(0)})
