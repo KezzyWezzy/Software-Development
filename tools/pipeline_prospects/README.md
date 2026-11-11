@@ -18,12 +18,19 @@ Put them in `tools/pipeline_prospects/data/` (git-ignored).
 ```bash
 pip install pandas openpyxl
 python tools/pipeline_prospects/build_target_list.py tools/pipeline_prospects/data/*.zip \
-    --out tools/pipeline_prospects/tx_la_pipeline_targets
+    --states TX,LA --out tx_la_targets
 ```
 
+`--states` takes state abbreviations or names (`LA`, `TX,LA,OK`) or `ALL`. Each
+state is ranked on its own. The CSV has one row per operator per state.
+
 The script uses the newest report year in each zip. It writes
-`tx_la_pipeline_targets.csv` (every operator with TX/LA miles) and
-`tx_la_pipeline_targets.md` (a summary with the top prospects).
+`<out>.csv` (every operator-state row) and `<out>.md` (states ranked by miles,
+then each state's tier counts and top tier-A prospects).
+
+HCA miles come from Part B of the annual report, which PHMSA reports per
+operator rather than per state. For multi-state operators they're spread
+across states in proportion to mileage, so treat those as estimates.
 
 The tool prints which sheet and column it used for mileage. To force one, pass
 `--miles-sheet "Part J"`. If a column isn't detected, run with `--list-columns`, then pass an override,
