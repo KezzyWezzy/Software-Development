@@ -72,18 +72,49 @@ def read_sheets(path: Path) -> list[tuple[str, pd.DataFrame]]:
 
 
 def promote_header(raw: pd.DataFrame) -> pd.DataFrame | None:
-    """PHMSA sheets have title rows above the header; find the OPERATOR_ID row."""
-    for i in range(min(15, len(raw))):
+    """PHMSA sheets have title/note rows above the header. The header is the row
+    with a cell that is exactly OPERATOR_ID (note rows merely mention it)."""
+    for i in range(min(25, len(raw))):
         row = [str(v).strip().upper() for v in raw.iloc[i].tolist()]
-        if any(re.search(r"OPERATOR.?ID", v) for v in row):
+        if "OPERATOR_ID" in row or "OPERATOR ID" in row:
             df = raw.iloc[i + 1:].copy()
             df.columns = [str(v).strip() for v in raw.iloc[i].tolist()]
+            df = df.loc[:, [c for c in df.columns if c and c.lower() != "nan"]]
             return df.dropna(how="all")
     return None
 
 
+def system_label(label: str) -> str:
+    low = label.lower()
+    if "liquid" in low:
+        return "Hazardous liquid"
+    if "gather" in low and "transmission" not in low:
+        return "Gas gathering"
+    if "gas" in low:
+        return "Gas transmission/gathering"
+    return "Unknown"
+
+
+def total_col(cols: list[str]) -> str | None:
+    """Grand-total mileage column of a breakdown sheet: a *TOTAL* column that is
+    not an HCA subtotal; prefer names mentioning MILES, else the last one."""
+    cands = [c for c in cols if "TOTAL" in c.upper() and "HCA" not in c.upper()]
+    miles = [c for c in cands if "MILE" in c.upper()]
+    return (miles or cands or [None])[-1]
+
+
+def hca_col(cols: list[str]) -> str | None:
+    cands = [c for c in cols if "HCA" in c.upper() and "NON" not in c.upper()]
+    tot = [c for c in cands if "TOTAL" in c.upper()]
+    return (tot or cands or [None])[-1]
+
+
 def load(path: Path, args) -> pd.DataFrame:
-    frames = []
+    """PHMSA 2023+ annual files split each report across sheets ("Part A to E",
+    "Part H", ...). Operator names live on a sheet without STATE_NAME; mileage
+    lives on per-state breakdown sheets. Join them on OPERATOR_ID."""
+    names: dict = {}
+    state_sheets: list[tuple[str, pd.DataFrame, dict]] = []
     for label, raw in read_sheets(path):
         df = promote_header(raw)
         if df is None:
@@ -92,25 +123,76 @@ def load(path: Path, args) -> pd.DataFrame:
         if args.list_columns:
             print(f"\n== {label} ==\n" + "\n".join(cols))
             continue
-        m = {k: find_col(cols, k, getattr(args, f"{k}_col", None)) for k in PATTERNS}
-        missing = [k for k in ("operator_id", "operator_name", "state", "total_miles") if not m[k]]
-        if missing:
-            print(f"skip {label}: could not detect {missing} (use --list-columns)", file=sys.stderr)
+        m = {k: find_col(cols, k, None) for k in ("operator_id", "operator_name", "state", "commodity")}
+        m["operator_id"] = args.operator_id_col or m["operator_id"]
+        m["state"] = args.state_col if args.state_col in cols else m["state"]
+        if not m["operator_id"]:
             continue
-        print(f"{label}: " + ", ".join(f"{k}={v}" for k, v in m.items()), file=sys.stderr)
-        out = pd.DataFrame({
-            "operator_id": df[m["operator_id"]],
-            "operator_name": df[m["operator_name"]].astype(str).str.strip(),
-            "state": df[m["state"]].astype(str).str.strip().str.upper(),
-            "commodity": df[m["commodity"]].astype(str).str.strip() if m["commodity"] else "",
-            "total_miles": pd.to_numeric(df[m["total_miles"]], errors="coerce").fillna(0),
-            "hca_miles": pd.to_numeric(df[m["hca_miles"]], errors="coerce").fillna(0) if m["hca_miles"] else 0.0,
-            "system": "Hazardous liquid" if "liquid" in label.lower() else
-                      "Gas gathering" if "gather" in label.lower() else
-                      "Gas transmission" if "gas" in label.lower() else "Unknown",
-        })
-        frames.append(out)
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+        name_col = args.operator_name_col if args.operator_name_col in cols else m["operator_name"]
+        if name_col and name_col != m["state"]:
+            for oid, nm in zip(df[m["operator_id"]], df[name_col]):
+                if pd.notna(nm) and str(nm).strip():
+                    names.setdefault(oid, str(nm).strip())
+        if m["state"]:
+            m["total"] = args.total_miles_col if args.total_miles_col in cols else total_col(cols)
+            m["hca"] = args.hca_miles_col if args.hca_miles_col in cols else hca_col(cols)
+            state_sheets.append((label, df, m))
+    if args.list_columns or not state_sheets:
+        return pd.DataFrame()
+
+    states = set(TARGET_STATES) | set(TARGET_STATES.values())
+
+    def tgt_sum(df, mm):
+        if not mm["total"]:
+            return 0.0
+        st = df[mm["state"]].astype(str).str.strip().str.upper()
+        return float(pd.to_numeric(df.loc[st.isin(states), mm["total"]], errors="coerce").fillna(0).sum())
+
+    # Pick the mileage sheet: several breakdown parts (by pipe size, decade,
+    # SMYS, ...) each sum to the same system total, so take the total that the
+    # most sheets agree on. --miles-sheet overrides.
+    sums = [(lbl, d, mm, tgt_sum(d, mm)) for lbl, d, mm in state_sheets]
+    print(f"\n{path.name}: candidate mileage columns (TX+LA sums):", file=sys.stderr)
+    for lbl, _, mm, s in sums:
+        print(f"  {lbl.split(':')[-1]:<28} total={mm['total']!s:<30} hca={mm['hca']!s:<25} TX+LA={s:,.1f}",
+              file=sys.stderr)
+    if args.miles_sheet:
+        pick = next((x for x in sums if args.miles_sheet.lower() in x[0].lower()), None)
+        if not pick:
+            sys.exit(f"--miles-sheet '{args.miles_sheet}' matched no sheet")
+    else:
+        valid = [x for x in sums if x[3] > 0]
+        if not valid:
+            print(f"  no mileage found in {path.name}; use --list-columns", file=sys.stderr)
+            return pd.DataFrame()
+        agree = lambda x: sum(abs(y[3] - x[3]) <= 0.01 * max(x[3], 1) for y in valid)
+        pick = max(valid, key=lambda x: (agree(x), x[3]))
+    lbl, df, mm, _ = pick
+    print(f"  -> using {lbl.split(':')[-1]} / {mm['total']}", file=sys.stderr)
+
+    out = pd.DataFrame({
+        "operator_id": df[mm["operator_id"]],
+        "state": df[mm["state"]].astype(str).str.strip().str.upper(),
+        "commodity": df[mm["commodity"]].astype(str).str.strip() if mm["commodity"] else "",
+        "total_miles": pd.to_numeric(df[mm["total"]], errors="coerce").fillna(0),
+        "hca_miles": 0.0,
+    })
+    # HCA miles: from the picked sheet if it has them, else the first sheet that does.
+    hsrc = next(((d, x) for l2, d, x, _ in sums if x["hca"] and d is df), None) or \
+        next(((d, x) for l2, d, x, _ in sums if x["hca"]), None)
+    if hsrc:
+        hd, hx = hsrc
+        h = pd.DataFrame({"operator_id": hd[hx["operator_id"]],
+                          "state": hd[hx["state"]].astype(str).str.strip().str.upper(),
+                          "hca": pd.to_numeric(hd[hx["hca"]], errors="coerce").fillna(0)})
+        h = h.groupby(["operator_id", "state"])["hca"].sum()
+        out = out.groupby(["operator_id", "state"], as_index=False).agg(
+            commodity=("commodity", lambda s: "; ".join(sorted({c for c in s if c and c != "nan"}))),
+            total_miles=("total_miles", "sum"))
+        out["hca_miles"] = [h.get((o, s), 0.0) for o, s in zip(out["operator_id"], out["state"])]
+    out["operator_name"] = out["operator_id"].map(names).fillna("(unknown)").astype(str)
+    out["system"] = system_label(lbl)
+    return out
 
 
 def classify(row) -> str:
@@ -129,6 +211,7 @@ def main() -> None:
     ap.add_argument("files", nargs="+", type=Path, help="PHMSA annual report .zip or .xlsx files")
     ap.add_argument("--out", type=Path, default=Path("tx_la_pipeline_targets"), help="output path prefix")
     ap.add_argument("--list-columns", action="store_true", help="print detected sheet columns and exit")
+    ap.add_argument("--miles-sheet", help="sheet-name substring to take mileage from (e.g. 'Part J')")
     for k in PATTERNS:
         ap.add_argument(f"--{k.replace('_', '-')}-col", dest=f"{k}_col", help=f"override {k} column")
     args = ap.parse_args()

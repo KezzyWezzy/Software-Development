@@ -25,7 +25,8 @@ The script uses the newest report year in each zip. It writes
 `tx_la_pipeline_targets.csv` (every operator with TX/LA miles) and
 `tx_la_pipeline_targets.md` (a summary with the top prospects).
 
-If a column isn't detected, run with `--list-columns`, then pass an override,
+The tool prints which sheet and column it used for mileage. To force one, pass
+`--miles-sheet "Part J"`. If a column isn't detected, run with `--list-columns`, then pass an override,
 e.g. `--total-miles-col PARTBTOTAL --hca-miles-col PARTBHCATOTAL`.
 
 ## Tiers
