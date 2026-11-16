@@ -1,0 +1,227 @@
+<title>Pricing & Competitors</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~72rem) — summary band, then segment cards, wave tables, timeline, notes */
+:root {
+  --bg: #f6f7f8; --surface: #ffffff; --fg: #1d2329; --muted: #5b6670; --line: #dde2e6;
+  --accent: #b86a00;          /* pipeline-marker amber */
+  --accent-soft: #fbefdc;
+  --ok: #2f7d4f; --ok-soft: #e3f2e8; --warn: #9a6400; --warn-soft: #fbf0d9; --hold: #6b7480; --hold-soft: #eceff2;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #13171b; --surface: #1b2026; --fg: #e6eaee; --muted: #9aa5ae; --line: #2c333a;
+  --accent: #f0a63a; --accent-soft: #33281a;
+  --ok: #6cc28d; --ok-soft: #1c2e23; --warn: #e8b55a; --warn-soft: #33291a; --hold: #9aa5ae; --hold-soft: #262c32;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #13171b; --surface: #1b2026; --fg: #e6eaee; --muted: #9aa5ae; --line: #2c333a;
+  --accent: #f0a63a; --accent-soft: #33281a;
+  --ok: #6cc28d; --ok-soft: #1c2e23; --warn: #e8b55a; --warn-soft: #33291a; --hold: #9aa5ae; --hold-soft: #262c32;
+  color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 72rem; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: .005em; }
+h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.1; }
+h2 { font-size: 24px; line-height: 1.2; }
+h3 { font-size: 18px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.muted { color: var(--muted); }
+section { display: grid; gap: 16px; min-width: 0; }
+header { display: grid; gap: 12px; border-bottom: 3px solid var(--accent); padding-bottom: 24px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.stat { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; }
+.stat b { font: 600 24px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+
+.segs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.seg { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.seg h3 { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.seg ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+.pill { display: inline-block; font: 500 11px/1 var(--f-mono); letter-spacing: .04em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 3px; white-space: nowrap; }
+.p-ok { background: var(--ok-soft); color: var(--ok); }
+.p-warn { background: var(--warn-soft); color: var(--warn); }
+.p-hold { background: var(--hold-soft); color: var(--hold); }
+.p-acc { background: var(--accent-soft); color: var(--accent); }
+
+.wave { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; display: grid; min-width: 0; }
+.wave-head { padding: 16px; display: grid; gap: 6px; border-bottom: 1px solid var(--line); }
+.wave-head .row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 11px/1.2 var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td .sub { display: block; font-size: 12.5px; color: var(--muted); }
+
+.timeline { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.step { position: relative; padding: 0 0 22px 22px; display: grid; gap: 6px; }
+.step::before { content: ""; position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--accent); }
+.step .when { font: 500 12px/1 var(--f-mono); color: var(--accent); letter-spacing: .04em; }
+.step ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+.note { background: var(--accent-soft); border-radius: 6px; padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; }
+.note ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.two > * { min-width: 0; }
+code { font: 13px var(--f-mono); }
+</style>
+<style>
+.tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.tier { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.tier.feat { border-color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
+.price { font: 600 26px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.price small { font: 400 13px var(--f-body); color: var(--muted); }
+.tier ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 14px; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 14px; }
+.kv span:nth-child(even) { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.src { font-size: 12.5px; color: var(--muted); }
+.src a { color: var(--accent); }
+.bar { position: relative; height: 14px; background: var(--hold-soft); border-radius: 3px; min-width: 140px; }
+.bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--hold); }
+.bar i.us { background: var(--accent); }
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">SpecFlow LDS + solar drone dock · price sheet and competitor landscape</span>
+  <h1>Pricing &amp; Competitors</h1>
+  <p>What we charge, what it costs us, and how that compares with what operators can buy elsewhere. Our prices match the defaults in the profit projection. Competitor figures are public listings or vendor estimates where any exist; most of these vendors only quote on request.</p>
+</header>
+
+<section>
+  <span class="eyebrow">Leak detection</span>
+  <h2>LDS price sheet</h2>
+  <div class="tiers">
+    <div class="tier"><span class="pill p-hold">Short-Line</span><div class="price">$35k <small>one-time</small></div><div class="kv"><span>Annual support</span><span>$9k</span><span>Or subscribe (36 mo)</span><span>$1.9k/mo</span></div>
+      <ul><li>Under 10 miles</li><li>Compensated volume balance</li><li>Fixed scope, fixed price, set install time</li><li>Built for refinery, terminal and plant lines</li></ul></div>
+    <div class="tier feat"><span class="pill p-ok">Standard</span><div class="price">$85k <small>one-time</small></div><div class="kv"><span>Annual support</span><span>$24k</span><span>Or subscribe (36 mo)</span><span>$4.8k/mo</span></div>
+      <ul><li>10–100 miles</li><li>Volume/mass balance with SPRT and CUSUM tests</li><li>API 1149 uncertainty budget and API 1130 documentation</li><li>Ready for drone docks</li></ul></div>
+    <div class="tier"><span class="pill p-warn">Advanced</span><div class="price">$180k <small>one-time</small></div><div class="kv"><span>Annual support</span><span>$48k</span><span>Or subscribe (36 mo)</span><span>$9.9k/mo</span></div>
+      <ul><li>100–500 miles</li><li>Adds pressure-wave leak location and RTTM</li><li>Multi-segment, multi-product</li><li>HCA-segment docks recommended</li></ul></div>
+    <div class="tier"><span class="pill p-hold">Enterprise</span><div class="price">Quote</div><div class="kv"><span>Support</span><span>Quote</span></div>
+      <ul><li>500+ miles</li><li>Usually held by an incumbent vendor</li><li>Lead with the alarm-check dock add-on instead</li></ul></div>
+  </div>
+  <p class="muted">Subscription prices equal the one-time fee plus 3 years of support, spread over 36 months with a 10% premium. They suit operators who would rather book an operating expense than a capital purchase.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Drone docks</span>
+  <h2>Hybrid add-ons</h2>
+  <div class="tiers">
+    <div class="tier feat"><span class="pill p-acc">Dock, purchased</span><div class="price">$125k <small>per dock, installed</small></div><div class="kv"><span>Service per year</span><span>$28k</span></div>
+      <ul><li>Drone and dock, HD zoom + thermal camera, methane sensor</li><li>Solar array, battery bank, LTE/Starlink</li><li>Launches automatically on an LDS alarm</li><li>Service covers maintenance, battery swaps and the remote pilot</li></ul></div>
+    <div class="tier"><span class="pill p-acc">Dock as a service</span><div class="price">$5.5k <small>per dock per month</small></div><div class="kv"><span>Term</span><span>36 months</span><span>36-mo total</span><span>$198k</span></div>
+      <ul><li>No capital outlay</li><li>Everything in the purchased dock plus service</li><li>Option to buy out at the end of the term</li></ul></div>
+    <div class="tier"><span class="pill p-warn">Alarm-check add-on</span><div class="price">$5.5k <small>per dock per month</small></div><div class="kv"><span>Minimum</span><span>2 docks</span></div>
+      <ul><li>For operators with another vendor's LDS</li><li>Docks on HCA segments, triggered from their alarms</li><li>Our way in to large lines</li></ul></div>
+    <div class="tier"><span class="pill p-ok">90-day pilot</span><div class="price">$35k <small>credited to purchase</small></div><div class="kv"><span>Scope</span><span>1 dock + LDS</span></div>
+      <ul><li>One 10–15 mile HCA segment</li><li>Measured: time to confirm an alarm, shutdowns avoided</li><li>Full credit if they sign within 60 days</li></ul></div>
+  </div>
+  <div class="note"><b>Bundle rule</b><p>10% off the LDS one-time fee when the customer buys two or more docks at the same time. It nudges hybrid deals without discounting the docks, which carry the thinner margin.</p></div>
+</section>
+
+<section>
+  <span class="eyebrow">Our costs and margins</span>
+  <h2>What a dock costs us</h2>
+  <div class="two">
+    <div class="wave"><div class="tbl"><table>
+      <thead><tr><th>Component</th><th class="n">Low</th><th class="n">High</th><th>Basis</th></tr></thead>
+      <tbody>
+        <tr><td>Drone + dock</td><td class="n">$26k</td><td class="n">$58k</td><td>DJI Dock 3 + Matrice 4TD dealer bundle to Skydio X10 dock listing</td></tr>
+        <tr><td>Methane / extra sensor payload</td><td class="n">$10k</td><td class="n">$30k</td><td>Estimate</td></tr>
+        <tr><td>Solar array + battery bank + MPPT</td><td class="n">$15k</td><td class="n">$25k</td><td>Estimate for 1.5–3 kW and 10–15 kWh</td></tr>
+        <tr><td>Comms, pad, fencing, install</td><td class="n">$5k</td><td class="n">$10k</td><td>Estimate</td></tr>
+        <tr class="total"><td>Total</td><td class="n">$56k</td><td class="n">$123k</td><td>Plan on $80k</td></tr>
+      </tbody>
+    </table></div></div>
+    <div class="wave"><div class="tbl"><table>
+      <thead><tr><th>Line item</th><th class="n">Price</th><th class="n">Cost</th><th class="n">Margin</th></tr></thead>
+      <tbody>
+        <tr><td>LDS one-time (engineering, install)</td><td class="n">100%</td><td class="n">35%</td><td class="n">65%</td></tr>
+        <tr><td>LDS annual support</td><td class="n">100%</td><td class="n">15%</td><td class="n">85%</td></tr>
+        <tr><td>Dock, purchased</td><td class="n">$125k</td><td class="n">$80k</td><td class="n">36%</td></tr>
+        <tr><td>Dock service, per year</td><td class="n">$28k</td><td class="n">$12k</td><td class="n">57%</td></tr>
+        <tr><td>Dock as a service, 36 months</td><td class="n">$198k</td><td class="n">$116k</td><td class="n">41%</td></tr>
+      </tbody>
+    </table></div></div>
+  </div>
+  <p class="muted">The LDS software carries the margin and the dock carries the differentiation. If you have to discount, discount the LDS one-time fee and protect dock pricing and annual fees.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Competitor landscape</span>
+  <h2>Who else the operator can buy from</h2>
+  <div class="wave"><div class="tbl"><table>
+    <thead><tr><th>Competitor</th><th>What they sell</th><th>Public price</th><th>Pricing model</th><th>Our position</th></tr></thead>
+    <tbody>
+      <tr><td colspan="5"><span class="eyebrow">Leak detection software</span></td></tr>
+      <tr><td><b>Pipewise</b> (CPM VBx)</td><td>Statistical volume balance with RTTM</td><td>$20–50k one-time plus annual support (their own illustrative estimate)</td><td>License or service</td><td>Closest price competitor. Our $35k Short-Line sits mid-range; win on the drone link and the uncertainty budget</td></tr>
+      <tr><td><b>DNV</b> Leakfinder (Synergi)</td><td>RTTM-based LDS, marketed for short, simple lines</td><td>Quote only</td><td>License</td><td>Direct competitor for short lines. Compete on fixed price and install time</td></tr>
+      <tr><td><b>Emerson</b> DeltaV PipelineManager</td><td>CPM suite with advanced RTTM</td><td>Quote only</td><td>Enterprise license</td><td>Strong on large systems. Don't fight them there; sell the alarm-check add-on</td></tr>
+      <tr><td><b>Atmos International</b></td><td>LDS and pipeline software, also offered as a service</td><td>Quote only</td><td>License or software as a service</td><td>Large-line incumbent. Our subscription option matches their service model</td></tr>
+      <tr><td><b>KROHNE</b> PipePatrol</td><td>RTTM leak detection</td><td>Quote only</td><td>License</td><td>Large-line incumbent</td></tr>
+      <tr><td colspan="5"><span class="eyebrow">Drone docks</span></td></tr>
+      <tr><td><b>DJI</b> Dock 3 + Matrice 4TD</td><td>Dock and drone hardware</td><td>$25.7–26.6k dealer bundle; $38.6–41.2k with care plan</td><td>Hardware purchase</td><td>Cheapest hardware but no LDS link, no solar, no methane sensor. Many US operators avoid DJI over federal restrictions; confirm the current status</td></tr>
+      <tr><td><b>Skydio</b> X10 + Dock</td><td>US-made dock and drone</td><td>Dock listed at about $57.7k by one reseller; software quoted</td><td>Hardware plus multi-year software subscription</td><td>Likely hardware partner. US-made, so it answers the DJI concern</td></tr>
+      <tr><td><b>Percepto</b></td><td>Enterprise drone-in-a-box with inspection software</td><td>Quote only; enterprise systems reported at $250k+</td><td>Subscription</td><td>Patrols but doesn't answer LDS alarms. We undercut on price</td></tr>
+      <tr><td><b>FlytBase</b></td><td>Dock-agnostic autonomy software</td><td>Claims drone-in-a-box from about $10k</td><td>Software subscription</td><td>Possible software layer for our docks rather than a rival</td></tr>
+      <tr><td colspan="5"><span class="eyebrow">What operators do today</span></td></tr>
+      <tr><td><b>Manned aircraft patrol</b></td><td>Fixed-wing or helicopter right-of-way patrol</td><td>Helicopter about £2–5k/hour (UK listing); fixed-wing covers 100+ miles/hour, helicopter 40–60</td><td>Per flight hour or per patrol</td><td>Cheap per mile but at most every 3 weeks and no alarm response. Docks replace it on covered segments</td></tr>
+      <tr><td><b>Basic SCADA balance / in-house</b></td><td>Simple over/short calculations</td><td>Already paid for</td><td>None</td><td>Nuisance alarms and weak audit defense. Sell the uncertainty budget and API 1130 paperwork</td></tr>
+    </tbody>
+  </table></div></div>
+</section>
+
+<section>
+  <span class="eyebrow">Where we sit</span>
+  <h2>One-time price ranges</h2>
+  <div class="wave"><div class="tbl"><table>
+    <thead><tr><th>Item</th><th>Range ($0–$150k)</th><th class="n">Price</th></tr></thead>
+    <tbody>
+      <tr><td>Pipewise CPM (illustrative)</td><td><div class="bar"><i style="left:13.3%;width:20%"></i></div></td><td class="n">$20–50k</td></tr>
+      <tr><td><b>SpecFlow Short-Line LDS</b></td><td><div class="bar"><i class="us" style="left:22.3%;width:1.4%"></i></div></td><td class="n">$35k</td></tr>
+      <tr><td><b>SpecFlow Standard LDS</b></td><td><div class="bar"><i class="us" style="left:56%;width:1.4%"></i></div></td><td class="n">$85k</td></tr>
+      <tr><td>DJI Dock 3 bundle (with/without care)</td><td><div class="bar"><i style="left:17.1%;width:10.4%"></i></div></td><td class="n">$26–41k</td></tr>
+      <tr><td>Skydio X10 dock (reseller listing)</td><td><div class="bar"><i style="left:37.8%;width:1.4%"></i></div></td><td class="n">~$58k</td></tr>
+      <tr><td><b>SpecFlow dock, installed</b></td><td><div class="bar"><i class="us" style="left:82.6%;width:1.4%"></i></div></td><td class="n">$125k</td></tr>
+    </tbody>
+  </table></div></div>
+  <p class="muted">Our dock costs about 3–5 times a bare DJI or Skydio unit. The difference is the solar power system, the methane sensor, install, and the link that launches it on an LDS alarm. Expect to defend that in every hybrid deal; the 90-day pilot is how you prove it.</p>
+</section>
+
+<section class="two">
+  <div class="note"><b>Example deal: 30-mile crude line, Louisiana marsh</b>
+    <div class="kv"><span>Standard LDS</span><span>$85k</span><span>2 docks, purchased</span><span>$250k</span><span>Bundle discount (10% of LDS)</span><span>−$8.5k</span><span><b>Year-1 invoice</b></span><span><b>$326.5k</b></span><span>Every year after (support + dock service)</span><span>$80k</span><span>Our 5-year gross profit</span><span>~$350k</span></div>
+    <p class="src">One 4-hour shutdown on a 100,000 bbl/day line at about $20k/hour costs about $80k, the same as a year of support and service.</p></div>
+  <div class="note"><b>Before quoting customers</b>
+    <ul><li>Replace the dock cost with real supplier quotes (Skydio, a methane payload, a solar integrator)</li><li>Get one competing CPM quote (Pipewise or DNV) for a 20–50 mile line to confirm the Standard price</li><li>Check whether DJI equipment is acceptable to your customers before choosing hardware</li></ul></div>
+</section>
+
+<section>
+  <span class="eyebrow">Sources</span>
+  <ul class="src">
+    <li>DJI Dock 3 + Matrice 4TD dealer listings: <a href="https://www.maverickdrone.com/products/dock-3-m4td-cp">Maverick Drone</a>, <a href="https://www.dronefly.com/products/dji-dock-3-matrice-4td-standalone-unit-bundle">Dronefly</a>, <a href="https://dslrpros.com/products/dji-dock-3-matrice-4td-with-care-enterprise-plus">DSLRPros (with care)</a></li>
+    <li>Skydio X10 dock listing and plans: <a href="https://mfe-is.com/product/skydio-dock/">MFE</a>, <a href="https://www.adorama.com/skydio-x10-dock-plan-cellular-data/p/skydr4dokpln">Adorama</a>; pricing model: <a href="https://usagepricing.com/blueprint/skydio">UsagePricing</a></li>
+    <li>Drone-in-a-box price range and Percepto: <a href="https://www.thedroneu.com/?p=41879">Drone U buyer's guide</a>, <a href="https://flytbase.com/percepto-alternative">FlytBase</a></li>
+    <li>CPM cost estimate: <a href="https://pipewise.ca/resources/blog/cost-of-reactive-leak-detection">Pipewise</a>; vendors: <a href="https://www.dnv.com/services/leakfinder/">DNV Leakfinder</a>, <a href="https://www.emerson.com/en-us/catalog/automation-solutions/emerson-pipelinemanager">Emerson PipelineManager</a>, <a href="https://www.atmosi.com/us/news-events/blogs/advantages-of-contracting-pipeline-software-applications-as-a-service/">Atmos International</a></li>
+    <li>Aerial patrol rates: <a href="https://ifactoryapp.com/industries/oil-and-gas/pipeline-right-of-way-patrol-third-party-damage">iFactory</a>, <a href="https://www.fairlifts.com/construction-helicopters/pipeline-inspection/">Fairlifts</a></li>
+    <li>Our prices, costs and margins are planning assumptions, not quotes.</li>
+  </ul>
+</section>
+
+</div>
