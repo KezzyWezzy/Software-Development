@@ -1,0 +1,355 @@
+<title>Gulf Coast Profit Projection</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~72rem) — summary band, then segment cards, wave tables, timeline, notes */
+:root {
+  --bg: #f6f7f8; --surface: #ffffff; --fg: #1d2329; --muted: #5b6670; --line: #dde2e6;
+  --accent: #b86a00;          /* pipeline-marker amber */
+  --accent-soft: #fbefdc;
+  --ok: #2f7d4f; --ok-soft: #e3f2e8; --warn: #9a6400; --warn-soft: #fbf0d9; --hold: #6b7480; --hold-soft: #eceff2; --bad: #b3362b; --gp: #d9a75c;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #13171b; --surface: #1b2026; --fg: #e6eaee; --muted: #9aa5ae; --line: #2c333a;
+  --accent: #f0a63a; --accent-soft: #33281a;
+  --ok: #6cc28d; --ok-soft: #1c2e23; --warn: #e8b55a; --warn-soft: #33291a; --hold: #9aa5ae; --hold-soft: #262c32; --bad: #ee7a6e; --gp: #8a6a3a;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #13171b; --surface: #1b2026; --fg: #e6eaee; --muted: #9aa5ae; --line: #2c333a;
+  --accent: #f0a63a; --accent-soft: #33281a;
+  --ok: #6cc28d; --ok-soft: #1c2e23; --warn: #e8b55a; --warn-soft: #33291a; --hold: #9aa5ae; --hold-soft: #262c32; --bad: #ee7a6e; --gp: #8a6a3a;
+  color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 72rem; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: .005em; }
+h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.1; }
+h2 { font-size: 24px; line-height: 1.2; }
+h3 { font-size: 18px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.muted { color: var(--muted); }
+section { display: grid; gap: 16px; min-width: 0; }
+header { display: grid; gap: 12px; border-bottom: 3px solid var(--accent); padding-bottom: 24px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.stat { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; }
+.stat b { font: 600 24px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+
+.segs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.seg { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.seg h3 { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.seg ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+.pill { display: inline-block; font: 500 11px/1 var(--f-mono); letter-spacing: .04em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 3px; white-space: nowrap; }
+.p-ok { background: var(--ok-soft); color: var(--ok); }
+.p-warn { background: var(--warn-soft); color: var(--warn); }
+.p-hold { background: var(--hold-soft); color: var(--hold); }
+.p-acc { background: var(--accent-soft); color: var(--accent); }
+
+.wave { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; display: grid; min-width: 0; }
+.wave-head { padding: 16px; display: grid; gap: 6px; border-bottom: 1px solid var(--line); }
+.wave-head .row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 11px/1.2 var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td .sub { display: block; font-size: 12.5px; color: var(--muted); }
+
+.timeline { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.step { position: relative; padding: 0 0 22px 22px; display: grid; gap: 6px; }
+.step::before { content: ""; position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--accent); }
+.step .when { font: 500 12px/1 var(--f-mono); color: var(--accent); letter-spacing: .04em; }
+.step ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+.note { background: var(--accent-soft); border-radius: 6px; padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; }
+.note ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.two > * { min-width: 0; }
+code { font: 13px var(--f-mono); }
+</style>
+<style>
+.controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+.seg-ctl { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg-ctl button { font: 500 13px var(--f-body); color: var(--fg); background: transparent; border: 0; padding: 8px 14px; cursor: pointer; }
+.seg-ctl button + button { border-left: 1px solid var(--line); }
+.seg-ctl button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.seg-ctl button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.kpi { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; }
+.kpi b { font: 600 26px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.kpi span { font-size: 13px; color: var(--muted); }
+.neg { color: var(--bad); }
+.pos { color: var(--ok); }
+.chart-box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+svg text { font: 12px var(--f-mono); fill: var(--muted); }
+td input { width: 6.5rem; font: 13px var(--f-mono); padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); text-align: right; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+summary { cursor: pointer; padding: 14px 16px; font: 600 16px var(--f-display); }
+details > div { padding: 0 0 8px; }
+tr.total td { font-weight: 600; border-top: 2px solid var(--line); }
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs .seg b { font: 600 22px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">SpecFlow LDS + drone dock · Texas &amp; Louisiana liquid lines · 5-year view</span>
+  <h1>Gulf Coast Profit Projection</h1>
+  <p>Revenue and profit if we sell to the operators in PHMSA's 2025 data. The customer counts come from that data. Prices, win rates and costs are planning assumptions: change them below and every number updates.</p>
+</header>
+
+<section>
+  <div class="controls">
+    <div><span class="eyebrow">Scenario</span><br>
+      <div class="seg-ctl" role="group" aria-label="Scenario">
+        <button type="button" data-scn="low">Conservative</button><button type="button" data-scn="base" aria-pressed="true">Base</button><button type="button" data-scn="high">Aggressive</button>
+      </div></div>
+    <div><span class="eyebrow">Offer</span><br>
+      <div class="seg-ctl" role="group" aria-label="Offer">
+        <button type="button" data-mode="lds">LDS alone</button><button type="button" data-mode="hyb" aria-pressed="true">LDS + hybrid</button>
+      </div></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><b id="k-rev5">–</b><span>Year-5 revenue</span></div>
+    <div class="kpi"><b id="k-ebit5">–</b><span>Year-5 operating profit</span></div>
+    <div class="kpi"><b id="k-cum">–</b><span>5-year cumulative profit</span></div>
+    <div class="kpi"><b id="k-be">–</b><span>First profitable year</span></div>
+    <div class="kpi"><b id="k-cust">–</b><span>Customers by year 5</span></div>
+    <div class="kpi"><b id="k-arr">–</b><span>Recurring revenue in year 5</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">By year</span>
+  <div class="chart-box">
+    <div class="legend"><span><i style="background:var(--accent)"></i>Revenue</span><span><i style="background:var(--gp)"></i>Gross profit</span><span><i style="background:var(--ok)"></i>Operating profit</span><span><i style="background:var(--bad)"></i>Operating loss</span></div>
+    <div style="overflow-x:auto"><svg id="chart" viewBox="0 0 720 300" width="100%" role="img" aria-label="Revenue, gross profit and operating profit by year"></svg></div>
+  </div>
+  <div class="wave"><div class="tbl"><table id="pl"></table></div></div>
+</section>
+
+<section>
+  <span class="eyebrow">LDS alone vs. hybrid</span>
+  <h2>What the drone adds</h2>
+  <div class="vs" id="vs"></div>
+  <p class="muted">The hybrid costs more to start (drone program setup and FAA approval to fly beyond line of sight, plus a pilot and maintenance team) and pays back through dock sales and per-dock service contracts. Same scenario on both sides.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Where the money comes from</span>
+  <h2>Customer pools and assumptions</h2>
+  <p class="muted">Pool sizes are counted from the PHMSA data (liquid operators by miles in Texas and Louisiana). Everything in an input box is an assumption you can change.</p>
+  <div class="wave"><div class="tbl"><table>
+    <thead><tr><th>Segment</th><th class="n">Pool</th><th class="n">Won by yr 5</th><th class="n">LDS one-time $</th><th class="n">LDS per year $</th><th class="n">Buy docks</th><th class="n">Docks each</th><th class="n">Yr-5 revenue</th></tr></thead>
+    <tbody id="segs"></tbody>
+  </table></div></div>
+  <details>
+    <summary>Dock, margin and cost assumptions</summary>
+    <div class="tbl"><table><tbody id="glob"></tbody></table></div>
+  </details>
+</section>
+
+<section>
+  <span class="eyebrow">Competitive position</span>
+  <h2>Who we're up against and how we price</h2>
+  <div class="wave"><div class="tbl"><table>
+    <thead><tr><th>Alternative the operator has</th><th>Strength</th><th>Gap we fill</th><th>Our pricing stance</th></tr></thead>
+    <tbody>
+      <tr><td><b>Established CPM/RTTM vendors</b><span class="sub">e.g. Atmos International, KROHNE PipePatrol</span></td><td>Proven on long trunk lines, known to auditors</td><td>Built and priced for big systems; slow and costly for a 20-mile line</td><td>Fixed-price short-line package well under a big-vendor project; compete on install time</td></tr>
+      <tr><td><b>Basic SCADA balance or in-house spreadsheet</b></td><td>Cheap, already there</td><td>Nuisance alarms, no uncertainty budget (API 1149), weak at audit</td><td>Sell the audit defense and fewer false alarms; price close to one avoided shutdown</td></tr>
+      <tr><td><b>Drone-in-a-box or drone-as-a-service vendors</b><span class="sub">e.g. Percepto, Skydio, DJI Dock resellers</span></td><td>Mature hardware</td><td>No link to the LDS. They patrol; they don't answer alarms</td><td>Dock priced near theirs; the alarm-triggered flight is the reason to pick us</td></tr>
+      <tr><td><b>Manned aircraft patrol</b></td><td>Low cost per mile; meets the 26-patrols-a-year rule</td><td>Every 2–3 weeks at best, nothing between flights, no alarm response</td><td>Docks replace the patrol contract on covered segments, so part of the cost is money they already spend</td></tr>
+    </tbody>
+  </table></div></div>
+  <div class="two">
+    <div class="note"><b>Why a customer pays for a dock (example)</b>
+      <p>A 100,000 bbl/day crude line that shuts down on an unconfirmed alarm loses about $10–30k an hour. A 4-hour shutdown at $20k an hour costs $80k, which is roughly <span id="ex-yrs">3</span> years of service on one dock. Two avoided shutdowns pay for the dock itself.</p></div>
+    <div class="note"><b>What would sink the projection</b>
+      <ul><li>FAA approval to fly beyond line of sight takes longer than a year, which stalls dock revenue</li><li>Short-line deals need more custom work than the fixed package assumes, so margins fall</li><li>Large operators renew with their current LDS vendor, so the add-on segment stays small</li></ul></div>
+  </div>
+</section>
+
+<section class="two">
+  <div class="note" style="background: var(--surface); border: 1px solid var(--line);"><b>How the model works</b>
+    <ul>
+      <li>New customers each year = pool × won-by-year-5 × ramp (10%, 20%, 25%, 25%, 20%)</li>
+      <li>One-time LDS revenue is booked in the year won; annual fees and dock service continue every year after</li>
+      <li>Hybrid customers buy their docks in the year they sign</li>
+      <li>Operating profit = gross profit − operating costs (staff, sales, overhead), before tax and interest</li>
+    </ul></div>
+  <div class="note" style="background: var(--surface); border: 1px solid var(--line);"><b>What's data and what's assumed</b>
+    <ul>
+      <li>Data: pool sizes (PHMSA 2025 annual reports; an operator in both states is counted once per state)</li>
+      <li>Data: 57% of Louisiana liquid operators with 10–500 miles have more than half their pipe in HCAs, which supports the dock attach rates</li>
+      <li>Assumed: every price, win rate, margin and cost. Replace them with your real figures</li>
+    </ul></div>
+</section>
+
+</div>
+
+<script>
+const SEGS = [
+  { id: "A", name: "Plant & refinery lines", sub: "under 10 miles", pool: 73 },
+  { id: "B", name: "Small systems", sub: "10–100 miles", pool: 142 },
+  { id: "C", name: "Mid-size systems", sub: "100–500 miles", pool: 64 },
+  { id: "D", name: "Large lines, drone add-on", sub: "500+ miles, existing LDS", pool: 34 },
+];
+const SCN = {
+  low:  { win: {A:.15,B:.10,C:.05,D:.06}, att: {A:0,B:.20,C:.25,D:1}, px: .85 },
+  base: { win: {A:.30,B:.20,C:.10,D:.12}, att: {A:0,B:.30,C:.40,D:1}, px: 1 },
+  high: { win: {A:.45,B:.30,C:.15,D:.20}, att: {A:0,B:.40,C:.50,D:1}, px: 1.1 },
+};
+const BASE_PX = { one: {A:35000,B:85000,C:180000,D:0}, rec: {A:9000,B:24000,C:48000,D:0}, docks: {A:0,B:2.5,C:4,D:5} };
+const GLOB = [
+  ["dockPrice", "Dock sale price (each)", 125000, "$"],
+  ["dockCost", "Dock cost to us (each)", 80000, "$"],
+  ["svc", "Dock service per year (each)", 28000, "$"],
+  ["svcCost", "Dock service cost to us per year", 12000, "$"],
+  ["gmOne", "Margin on one-time LDS work", 65, "%"],
+  ["gmRec", "Margin on annual LDS fees", 85, "%"],
+  ["opex1", "Operating costs, year 1 (LDS business)", 900000, "$"],
+  ["opexGrow", "Operating cost growth per year", 10, "%"],
+  ["droneSetup", "Drone program setup, year 1 (hybrid only)", 300000, "$"],
+  ["droneOps", "Drone pilots and maintenance per year (hybrid only)", 150000, "$"],
+];
+const RAMP = [.10, .20, .25, .25, .20];
+let scn = "base", mode = "hyb";
+const st = { win:{}, att:{}, one:{}, rec:{}, docks:{}, g:{} };
+
+function applyScenario(k) {
+  const s = SCN[k];
+  for (const seg of SEGS) {
+    st.win[seg.id] = s.win[seg.id]; st.att[seg.id] = s.att[seg.id];
+    st.one[seg.id] = Math.round(BASE_PX.one[seg.id] * s.px / 1000) * 1000;
+    st.rec[seg.id] = Math.round(BASE_PX.rec[seg.id] * s.px / 1000) * 1000;
+    st.docks[seg.id] = BASE_PX.docks[seg.id];
+  }
+  for (const [key, , v] of GLOB) st.g[key] = v;
+}
+
+function run(hybrid) {
+  const g = st.g, cum = {A:0,B:0,C:0,D:0}, cumD = {A:0,B:0,C:0,D:0}; let cumDocks = 0;
+  const years = [], segRev5 = {};
+  for (let y = 0; y < 5; y++) {
+    let lds1 = 0, ldsR = 0, gp = 0, newDocks = 0;
+    const segY = {};
+    for (const s of SEGS) {
+      if (!hybrid && s.id === "D") { segY[s.id] = 0; continue; }
+      const nw = s.pool * st.win[s.id] * RAMP[y];
+      cum[s.id] += nw;
+      const one = nw * st.one[s.id], rec = cum[s.id] * st.rec[s.id];
+      lds1 += one; ldsR += rec;
+      gp += one * g.gmOne / 100 + rec * g.gmRec / 100;
+      const nd = hybrid ? nw * st.att[s.id] * st.docks[s.id] : 0;
+      newDocks += nd; cumD[s.id] += nd;
+      segY[s.id] = one + rec + nd * g.dockPrice + cumD[s.id] * g.svc;
+    }
+    cumDocks += newDocks;
+    const dockSale = newDocks * g.dockPrice, dockSvc = cumDocks * g.svc;
+    gp += newDocks * (g.dockPrice - g.dockCost) + cumDocks * (g.svc - g.svcCost);
+    let opex = g.opex1 * Math.pow(1 + g.opexGrow / 100, y);
+    if (hybrid) opex += g.droneOps + (y === 0 ? g.droneSetup : 0);
+    const rev = lds1 + ldsR + dockSale + dockSvc;
+    years.push({ lds1, ldsR, dockSale, dockSvc, rev, gp, opex, ebit: gp - opex, docks: cumDocks,
+      cust: Object.values(cum).reduce((a, b) => a + b, 0), recurring: ldsR + dockSvc });
+    if (y === 4) Object.assign(segRev5, segY);
+  }
+  return { years, segRev5 };
+}
+
+const fm = v => { const a = Math.abs(v), s = v < 0 ? "−" : "";
+  return a >= 1e6 ? `${s}$${(a/1e6).toFixed(2)}M` : `${s}$${Math.round(a/1000)}k`; };
+
+function render() {
+  const H = run(true), L = run(false), R = mode === "hyb" ? H : L, ys = R.years, y5 = ys[4];
+  const cumE = ys.reduce((a, y) => a + y.ebit, 0), be = ys.findIndex(y => y.ebit > 0);
+  const set = (id, v, cls) => { const el = document.getElementById(id); el.textContent = v; el.className = cls || ""; };
+  set("k-rev5", fm(y5.rev)); set("k-ebit5", fm(y5.ebit), y5.ebit < 0 ? "neg" : "pos");
+  set("k-cum", fm(cumE), cumE < 0 ? "neg" : "pos"); set("k-be", be < 0 ? "Not in 5 yrs" : `Year ${be + 1}`);
+  set("k-cust", `${Math.round(y5.cust)}` + (mode === "hyb" ? ` · ${Math.round(y5.docks)} docks` : ""));
+  set("k-arr", fm(y5.recurring));
+
+  const rows = [["LDS one-time", "lds1"], ["LDS annual fees", "ldsR"]];
+  if (mode === "hyb") rows.push(["Dock sales", "dockSale"], ["Dock service", "dockSvc"]);
+  rows.push(["Total revenue", "rev", "total"], ["Gross profit", "gp"], ["Operating costs", "opex"], ["Operating profit", "ebit", "total"]);
+  document.getElementById("pl").innerHTML = `<thead><tr><th></th>${ys.map((_, i) => `<th class="n">Year ${i + 1}</th>`).join("")}<th class="n">5-yr total</th></tr></thead><tbody>` +
+    rows.map(([lab, k, c]) => `<tr class="${c || ""}"><td>${lab}</td>${ys.map(y => `<td class="n ${k === "ebit" ? (y[k] < 0 ? "neg" : "pos") : ""}">${fm(k === "opex" ? -y[k] : y[k])}</td>`).join("")}<td class="n">${fm((k === "opex" ? -1 : 1) * ys.reduce((a, y) => a + y[k], 0))}</td></tr>`).join("") + "</tbody>";
+
+  const sum = (r, k) => r.years.reduce((a, y) => a + y[k], 0);
+  document.getElementById("vs").innerHTML = [["LDS alone", L], ["LDS + hybrid", H]].map(([n, r]) =>
+    `<div class="seg"><h3>${n}</h3><span class="muted">5-year revenue</span><b>${fm(sum(r, "rev"))}</b><span class="muted">5-year operating profit</span><b class="${sum(r, "ebit") < 0 ? "neg" : "pos"}">${fm(sum(r, "ebit"))}</b><span class="muted">Year-5 recurring revenue: ${fm(r.years[4].recurring)}</span></div>`).join("") +
+    `<div class="seg"><h3>Difference</h3><span class="muted">Extra revenue from the hybrid</span><b>${fm(sum(H, "rev") - sum(L, "rev"))}</b><span class="muted">Extra operating profit</span><b class="${sum(H, "ebit") - sum(L, "ebit") < 0 ? "neg" : "pos"}">${fm(sum(H, "ebit") - sum(L, "ebit"))}</b></div>`;
+
+  for (const s of SEGS) { const c = document.getElementById("rev5-" + s.id); if (c) c.textContent = fm(R.segRev5[s.id] || 0); }
+  document.getElementById("ex-yrs").textContent = (80000 / st.g.svc).toFixed(1);
+  drawChart(ys);
+}
+
+function drawChart(ys) {
+  const W = 720, Hh = 300, padL = 64, padR = 12, padT = 12, padB = 30;
+  const vals = ys.flatMap(y => [y.rev, y.gp, y.ebit]);
+  let max = Math.max(...vals, 1), min = Math.min(...vals, 0);
+  const step = niceStep((max - min) / 5); max = Math.ceil(max / step) * step; min = Math.floor(min / step) * step;
+  const yv = v => padT + (max - v) / (max - min) * (Hh - padT - padB);
+  let s = "";
+  for (let v = min; v <= max + 1e-6; v += step) {
+    s += `<line x1="${padL}" x2="${W - padR}" y1="${yv(v)}" y2="${yv(v)}" stroke="var(--line)" stroke-width="${v === 0 ? 1.5 : 1}"/>`;
+    s += `<text x="${padL - 8}" y="${yv(v) + 4}" text-anchor="end">${fm(v)}</text>`;
+  }
+  const gw = (W - padL - padR) / 5, bw = Math.min(26, gw / 4.2);
+  ys.forEach((y, i) => {
+    const cx = padL + gw * i + gw / 2;
+    [[y.rev, "var(--accent)"], [y.gp, "var(--gp)"], [y.ebit, y.ebit < 0 ? "var(--bad)" : "var(--ok)"]].forEach(([v, c], j) => {
+      const x = cx + (j - 1.5) * (bw + 3), top = yv(Math.max(v, 0)), h = Math.abs(yv(v) - yv(0));
+      s += `<rect x="${x}" y="${top}" width="${bw}" height="${Math.max(h, 1)}" fill="${c}" rx="2"><title>${fm(v)}</title></rect>`;
+    });
+    s += `<text x="${cx}" y="${Hh - 8}" text-anchor="middle">Year ${i + 1}</text>`;
+  });
+  document.getElementById("chart").innerHTML = s;
+}
+function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; }
+
+function buildInputs() {
+  const inp = (id, v, step) => `<input id="${id}" type="number" inputmode="decimal" step="${step}" value="${v}">`;
+  document.getElementById("segs").innerHTML = SEGS.map(s => `<tr><td><b>${s.name}</b><span class="sub">${s.sub}</span></td><td class="n">${s.pool}</td>
+    <td class="n">${inp("win-" + s.id, Math.round(st.win[s.id] * 100), 1)} %</td>
+    <td class="n">${s.id === "D" ? "—" : inp("one-" + s.id, st.one[s.id], 1000)}</td>
+    <td class="n">${s.id === "D" ? "—" : inp("rec-" + s.id, st.rec[s.id], 1000)}</td>
+    <td class="n">${s.id === "A" ? "—" : s.id === "D" ? "100 %" : inp("att-" + s.id, Math.round(st.att[s.id] * 100), 1) + " %"}</td>
+    <td class="n">${s.id === "A" ? "—" : inp("docks-" + s.id, st.docks[s.id], .5)}</td>
+    <td class="n" id="rev5-${s.id}">–</td></tr>`).join("");
+  document.getElementById("glob").innerHTML = GLOB.map(([k, lab, , u]) => `<tr><td>${lab}</td><td class="n">${u === "$" ? "$ " : ""}${inp("g-" + k, st.g[k], u === "%" ? 1 : 1000)}${u === "%" ? " %" : ""}</td></tr>`).join("");
+}
+
+document.addEventListener("input", e => {
+  const id = e.target.id, v = parseFloat(e.target.value); if (!id || isNaN(v)) return;
+  const [k, seg] = id.split("-");
+  if (k === "g") st.g[seg] = v;
+  else if (k === "win" || k === "att") st[k][seg] = v / 100;
+  else if (st[k]) st[k][seg] = v;
+  render();
+});
+document.querySelectorAll("[data-scn]").forEach(b => b.addEventListener("click", () => {
+  scn = b.dataset.scn; document.querySelectorAll("[data-scn]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  applyScenario(scn); buildInputs(); render();
+}));
+document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+  mode = b.dataset.mode; document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", x === b)); render();
+}));
+applyScenario("base"); buildInputs(); render();
+</script>
