@@ -20,6 +20,38 @@ That means the usual assumptions do not hold:
 
 Treat every file as a first draft by someone who could not test it, because that is what it is.
 
+### If this is not part of the bench test, do not put it in the scan
+
+This code is for terminal-driven batching. If the bench test does not exercise
+that, none of it belongs in the running project — not scheduled, not disabled
+but present. Leave `PRG_IND780` out of the task's program list and do not apply
+the `PRG_BayControl` inserts. The branch keeps the source; the controller does
+not carry it.
+
+Two separate things, often confused:
+
+| | Effect |
+|---|---|
+| **Unscheduled** | The routine never executes. Nothing it contains can touch an output. This is what a bench test that does not cover batching should use. |
+| **Scheduled with `Cfg_Enabled = 0`** | The routine executes and writes nothing to any module. Safe, but it is still code in the scan, still scan time, still something to reason about when a bench result looks wrong. |
+
+If it is scheduled, these are the configuration defaults that hold it inert, and
+both are the zero value, so a fresh import is inert without anyone setting
+anything:
+
+- `IND780s[n].Cfg_Enabled = 0` — card not in service. No module output is
+  written for that card; its output block is skipped entirely.
+- `Cfg_BayScaleMode[b] = 0` — bay runs the existing PLC cutoff. `TermBatch`
+  stays false and every mode-1 branch in `PRG_BayControl` is skipped.
+
+Both are confirmed by inspection of the source, not by running it.
+
+One caution if you do schedule it alongside the existing code: bay 3's module
+output structure is already driven by the `Floating_Point` / `Integer` demo
+routines described in §2. `Cfg_Enabled = 0` keeps this code off that structure,
+but those demo routines still need to come out of the scan before bay 3's card
+is ever enabled here, or there will be two writers on the same word.
+
 ---
 
 ## 1. What the change does

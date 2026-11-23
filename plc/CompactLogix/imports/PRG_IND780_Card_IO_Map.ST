@@ -20,7 +20,13 @@
    renaming IND780_Float (bay 3's terminal) to IND780_3.
 
    A card whose module has not been added yet is left disabled by
-   Cfg_Enabled = 0; the block for it is present and inert.
+   Cfg_Enabled = 0; the block for it is present and inert. Inert means its
+   output block is SKIPPED, not executed with zeros - a disabled card's module
+   output word is never written by this routine, so nothing here becomes a
+   second writer on a word another routine already drives.
+
+   If terminal batching is not part of the test at hand, leave PRG_IND780 out
+   of the task's program list entirely rather than relying on Cfg_Enabled.
 
    ORDERING: this routine must run FIRST in PRG_IND780, before Batch_Sequencer
    and Bay_Scale_Map, and PRG_IND780 must run before PRG_BayControl. It does.
@@ -241,79 +247,91 @@ FOR CardIdx := 0 TO 5 DO
 END_FOR;
 
 (* ---- Card 1 ---- *)
-IND780_1:O.Slot1.Tare              := IND780s[0].Req_Tare;
-IND780_1:O.Slot1.Clear             := IND780s[0].Req_Clear;
-IND780_1:O.Slot1.Zero              := IND780s[0].Req_Zero;
-IND780_1:O.Slot1.Print             := IND780s[0].Req_Print;
-IND780_1:O.Slot1.LoadTare          := IND780s[0].Req_LoadTare;
-IND780_1:O.Slot1.LoadTarget        := IND780s[0].Req_LoadTarget;
-IND780_1:O.Slot1.AbortStartTarget  := IND780s[0].Req_StartTarget;
-IND780_1:O.Slot1.Select1           := SelBit1[0];
-IND780_1:O.Slot1.Select2           := SelBit2[0];
-IND780_1:O.Slot1.Select3           := SelBit3[0];
-IND780_1:O.Slot1.Weight            := IND780s[0].Weight_Out;
+IF IND780s[0].Cfg_Enabled THEN
+    IND780_1:O.Slot1.Tare              := IND780s[0].Req_Tare;
+    IND780_1:O.Slot1.Clear             := IND780s[0].Req_Clear;
+    IND780_1:O.Slot1.Zero              := IND780s[0].Req_Zero;
+    IND780_1:O.Slot1.Print             := IND780s[0].Req_Print;
+    IND780_1:O.Slot1.LoadTare          := IND780s[0].Req_LoadTare;
+    IND780_1:O.Slot1.LoadTarget        := IND780s[0].Req_LoadTarget;
+    IND780_1:O.Slot1.AbortStartTarget  := IND780s[0].Req_StartTarget;
+    IND780_1:O.Slot1.Select1           := SelBit1[0];
+    IND780_1:O.Slot1.Select2           := SelBit2[0];
+    IND780_1:O.Slot1.Select3           := SelBit3[0];
+    IND780_1:O.Slot1.Weight            := IND780s[0].Weight_Out;
+END_IF;
 
 (* ---- Card 2 ---- *)
-IND780_2:O.Slot1.Tare              := IND780s[1].Req_Tare;
-IND780_2:O.Slot1.Clear             := IND780s[1].Req_Clear;
-IND780_2:O.Slot1.Zero              := IND780s[1].Req_Zero;
-IND780_2:O.Slot1.Print             := IND780s[1].Req_Print;
-IND780_2:O.Slot1.LoadTare          := IND780s[1].Req_LoadTare;
-IND780_2:O.Slot1.LoadTarget        := IND780s[1].Req_LoadTarget;
-IND780_2:O.Slot1.AbortStartTarget  := IND780s[1].Req_StartTarget;
-IND780_2:O.Slot1.Select1           := SelBit1[1];
-IND780_2:O.Slot1.Select2           := SelBit2[1];
-IND780_2:O.Slot1.Select3           := SelBit3[1];
-IND780_2:O.Slot1.Weight            := IND780s[1].Weight_Out;
+IF IND780s[1].Cfg_Enabled THEN
+    IND780_2:O.Slot1.Tare              := IND780s[1].Req_Tare;
+    IND780_2:O.Slot1.Clear             := IND780s[1].Req_Clear;
+    IND780_2:O.Slot1.Zero              := IND780s[1].Req_Zero;
+    IND780_2:O.Slot1.Print             := IND780s[1].Req_Print;
+    IND780_2:O.Slot1.LoadTare          := IND780s[1].Req_LoadTare;
+    IND780_2:O.Slot1.LoadTarget        := IND780s[1].Req_LoadTarget;
+    IND780_2:O.Slot1.AbortStartTarget  := IND780s[1].Req_StartTarget;
+    IND780_2:O.Slot1.Select1           := SelBit1[1];
+    IND780_2:O.Slot1.Select2           := SelBit2[1];
+    IND780_2:O.Slot1.Select3           := SelBit3[1];
+    IND780_2:O.Slot1.Weight            := IND780s[1].Weight_Out;
+END_IF;
 
 (* ---- Card 3 ---- *)
-IND780_3:O.Slot1.Tare              := IND780s[2].Req_Tare;
-IND780_3:O.Slot1.Clear             := IND780s[2].Req_Clear;
-IND780_3:O.Slot1.Zero              := IND780s[2].Req_Zero;
-IND780_3:O.Slot1.Print             := IND780s[2].Req_Print;
-IND780_3:O.Slot1.LoadTare          := IND780s[2].Req_LoadTare;
-IND780_3:O.Slot1.LoadTarget        := IND780s[2].Req_LoadTarget;
-IND780_3:O.Slot1.AbortStartTarget  := IND780s[2].Req_StartTarget;
-IND780_3:O.Slot1.Select1           := SelBit1[2];
-IND780_3:O.Slot1.Select2           := SelBit2[2];
-IND780_3:O.Slot1.Select3           := SelBit3[2];
-IND780_3:O.Slot1.Weight            := IND780s[2].Weight_Out;
+IF IND780s[2].Cfg_Enabled THEN
+    IND780_3:O.Slot1.Tare              := IND780s[2].Req_Tare;
+    IND780_3:O.Slot1.Clear             := IND780s[2].Req_Clear;
+    IND780_3:O.Slot1.Zero              := IND780s[2].Req_Zero;
+    IND780_3:O.Slot1.Print             := IND780s[2].Req_Print;
+    IND780_3:O.Slot1.LoadTare          := IND780s[2].Req_LoadTare;
+    IND780_3:O.Slot1.LoadTarget        := IND780s[2].Req_LoadTarget;
+    IND780_3:O.Slot1.AbortStartTarget  := IND780s[2].Req_StartTarget;
+    IND780_3:O.Slot1.Select1           := SelBit1[2];
+    IND780_3:O.Slot1.Select2           := SelBit2[2];
+    IND780_3:O.Slot1.Select3           := SelBit3[2];
+    IND780_3:O.Slot1.Weight            := IND780s[2].Weight_Out;
+END_IF;
 
 (* ---- Card 4 ---- *)
-IND780_4:O.Slot1.Tare              := IND780s[3].Req_Tare;
-IND780_4:O.Slot1.Clear             := IND780s[3].Req_Clear;
-IND780_4:O.Slot1.Zero              := IND780s[3].Req_Zero;
-IND780_4:O.Slot1.Print             := IND780s[3].Req_Print;
-IND780_4:O.Slot1.LoadTare          := IND780s[3].Req_LoadTare;
-IND780_4:O.Slot1.LoadTarget        := IND780s[3].Req_LoadTarget;
-IND780_4:O.Slot1.AbortStartTarget  := IND780s[3].Req_StartTarget;
-IND780_4:O.Slot1.Select1           := SelBit1[3];
-IND780_4:O.Slot1.Select2           := SelBit2[3];
-IND780_4:O.Slot1.Select3           := SelBit3[3];
-IND780_4:O.Slot1.Weight            := IND780s[3].Weight_Out;
+IF IND780s[3].Cfg_Enabled THEN
+    IND780_4:O.Slot1.Tare              := IND780s[3].Req_Tare;
+    IND780_4:O.Slot1.Clear             := IND780s[3].Req_Clear;
+    IND780_4:O.Slot1.Zero              := IND780s[3].Req_Zero;
+    IND780_4:O.Slot1.Print             := IND780s[3].Req_Print;
+    IND780_4:O.Slot1.LoadTare          := IND780s[3].Req_LoadTare;
+    IND780_4:O.Slot1.LoadTarget        := IND780s[3].Req_LoadTarget;
+    IND780_4:O.Slot1.AbortStartTarget  := IND780s[3].Req_StartTarget;
+    IND780_4:O.Slot1.Select1           := SelBit1[3];
+    IND780_4:O.Slot1.Select2           := SelBit2[3];
+    IND780_4:O.Slot1.Select3           := SelBit3[3];
+    IND780_4:O.Slot1.Weight            := IND780s[3].Weight_Out;
+END_IF;
 
 (* ---- Card 5 ---- *)
-IND780_5:O.Slot1.Tare              := IND780s[4].Req_Tare;
-IND780_5:O.Slot1.Clear             := IND780s[4].Req_Clear;
-IND780_5:O.Slot1.Zero              := IND780s[4].Req_Zero;
-IND780_5:O.Slot1.Print             := IND780s[4].Req_Print;
-IND780_5:O.Slot1.LoadTare          := IND780s[4].Req_LoadTare;
-IND780_5:O.Slot1.LoadTarget        := IND780s[4].Req_LoadTarget;
-IND780_5:O.Slot1.AbortStartTarget  := IND780s[4].Req_StartTarget;
-IND780_5:O.Slot1.Select1           := SelBit1[4];
-IND780_5:O.Slot1.Select2           := SelBit2[4];
-IND780_5:O.Slot1.Select3           := SelBit3[4];
-IND780_5:O.Slot1.Weight            := IND780s[4].Weight_Out;
+IF IND780s[4].Cfg_Enabled THEN
+    IND780_5:O.Slot1.Tare              := IND780s[4].Req_Tare;
+    IND780_5:O.Slot1.Clear             := IND780s[4].Req_Clear;
+    IND780_5:O.Slot1.Zero              := IND780s[4].Req_Zero;
+    IND780_5:O.Slot1.Print             := IND780s[4].Req_Print;
+    IND780_5:O.Slot1.LoadTare          := IND780s[4].Req_LoadTare;
+    IND780_5:O.Slot1.LoadTarget        := IND780s[4].Req_LoadTarget;
+    IND780_5:O.Slot1.AbortStartTarget  := IND780s[4].Req_StartTarget;
+    IND780_5:O.Slot1.Select1           := SelBit1[4];
+    IND780_5:O.Slot1.Select2           := SelBit2[4];
+    IND780_5:O.Slot1.Select3           := SelBit3[4];
+    IND780_5:O.Slot1.Weight            := IND780s[4].Weight_Out;
+END_IF;
 
 (* ---- Card 6 ---- *)
-IND780_6:O.Slot1.Tare              := IND780s[5].Req_Tare;
-IND780_6:O.Slot1.Clear             := IND780s[5].Req_Clear;
-IND780_6:O.Slot1.Zero              := IND780s[5].Req_Zero;
-IND780_6:O.Slot1.Print             := IND780s[5].Req_Print;
-IND780_6:O.Slot1.LoadTare          := IND780s[5].Req_LoadTare;
-IND780_6:O.Slot1.LoadTarget        := IND780s[5].Req_LoadTarget;
-IND780_6:O.Slot1.AbortStartTarget  := IND780s[5].Req_StartTarget;
-IND780_6:O.Slot1.Select1           := SelBit1[5];
-IND780_6:O.Slot1.Select2           := SelBit2[5];
-IND780_6:O.Slot1.Select3           := SelBit3[5];
-IND780_6:O.Slot1.Weight            := IND780s[5].Weight_Out;
+IF IND780s[5].Cfg_Enabled THEN
+    IND780_6:O.Slot1.Tare              := IND780s[5].Req_Tare;
+    IND780_6:O.Slot1.Clear             := IND780s[5].Req_Clear;
+    IND780_6:O.Slot1.Zero              := IND780s[5].Req_Zero;
+    IND780_6:O.Slot1.Print             := IND780s[5].Req_Print;
+    IND780_6:O.Slot1.LoadTare          := IND780s[5].Req_LoadTare;
+    IND780_6:O.Slot1.LoadTarget        := IND780s[5].Req_LoadTarget;
+    IND780_6:O.Slot1.AbortStartTarget  := IND780s[5].Req_StartTarget;
+    IND780_6:O.Slot1.Select1           := SelBit1[5];
+    IND780_6:O.Slot1.Select2           := SelBit2[5];
+    IND780_6:O.Slot1.Select3           := SelBit3[5];
+    IND780_6:O.Slot1.Weight            := IND780s[5].Weight_Out;
+END_IF;
