@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RSLogix5000Content SchemaRevision="1.0" SoftwareRevision="37.00" TargetName="IND780" TargetType="DataType" ContainsContext="true" Owner="KJV Solutions LLC" ExportDate="Fri Sep 04 16:30:00 2026" ExportOptions="References NoRawData L5KData DecoratedData Context Dependencies ForceProtectedEncoding AllProjDocTrans">
+<Controller Use="Context" Name="CTM_CPX">
+<DataTypes Use="Context">
+<DataType Name="IND780" Family="NoFamily" Class="User">
+<Description>
+<![CDATA[One METTLER TOLEDO IND780 EtherNet/IP terminal. One instance per physical card; the array IND780s[6] carries all six. Module tags are not indexable, so PRG_IND780/Card_IO_Map copies each module in and out of its array element and every other routine works on the array.]]>
+</Description>
+<Members>
+<Member Name="CardID" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Card number 1-6. Matches the value site config puts in Cfg_BayScaleSrc[].]]>
+</Description>
+</Member>
+<Member Name="ZZZZZZZZZZIND7801" DataType="SINT" Dimension="0" Radix="Decimal" Hidden="true" ExternalAccess="Read/Write"/>
+<Member Name="Comm_OK" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="0" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Module connection OK - AOP EntryStatus healthy and data updating]]>
+</Description>
+</Member>
+<Member Name="DataOk" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="1" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal Data OK status bit - clear means a major error at the scale]]>
+</Description>
+</Member>
+<Member Name="UpdateInProgress" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="2" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal A/D update in progress - reading is not coherent this scan]]>
+</Description>
+</Member>
+<Member Name="Motion" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="3" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Scale in motion (unstable)]]>
+</Description>
+</Member>
+<Member Name="NetMode" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="4" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal is displaying NET rather than GROSS]]>
+</Description>
+</Member>
+<Member Name="Feed" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="5" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Slow / fine feed output active in the terminal target logic]]>
+</Description>
+</Member>
+<Member Name="FastFeed" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="6" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Coarse / fast feed output active in the terminal target logic]]>
+</Description>
+</Member>
+<Member Name="Tolerance_Ok" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7801" BitNumber="7" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal reports the delivered amount within tolerance]]>
+</Description>
+</Member>
+<Member Name="ZZZZZZZZZZIND7802" DataType="SINT" Dimension="0" Radix="Decimal" Hidden="true" ExternalAccess="Read/Write"/>
+<Member Name="UnderLowTolerance" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="0" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal reports under the negative tolerance band]]>
+</Description>
+</Member>
+<Member Name="OverHighTolerance" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="1" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal reports over the positive tolerance band]]>
+</Description>
+</Member>
+<Member Name="Comparator1" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="2" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal comparator 1 active - independent threshold, NOT batch logic]]>
+</Description>
+</Member>
+<Member Name="Comparator2" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="3" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal comparator 2 active - independent threshold, NOT batch logic]]>
+</Description>
+</Member>
+<Member Name="Comparator3" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="4" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal comparator 3 active - independent threshold, NOT batch logic]]>
+</Description>
+</Member>
+<Member Name="EnterKey" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="5" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal ENTER key pressed]]>
+</Description>
+</Member>
+<Member Name="Input1" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="6" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal discrete input 1 status]]>
+</Description>
+</Member>
+<Member Name="Input2" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7802" BitNumber="7" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal discrete input 2 status]]>
+</Description>
+</Member>
+<Member Name="ZZZZZZZZZZIND7803" DataType="SINT" Dimension="0" Radix="Decimal" Hidden="true" ExternalAccess="Read/Write"/>
+<Member Name="Input3" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="0" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal discrete input 3 status]]>
+</Description>
+</Member>
+<Member Name="Req_Tare" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="1" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: terminal captures its own tare at its own stability (custody tare)]]>
+</Description>
+</Member>
+<Member Name="Req_Clear" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="2" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: clear]]>
+</Description>
+</Member>
+<Member Name="Req_Zero" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="3" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: zero]]>
+</Description>
+</Member>
+<Member Name="Req_Print" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="4" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: print ticket at the terminal]]>
+</Description>
+</Member>
+<Member Name="Req_LoadTare" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="5" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: push Weight_Out into the terminal tare register (NOT a custody tare)]]>
+</Description>
+</Member>
+<Member Name="Req_LoadTarget" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="6" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: push Weight_Out into the terminal target register]]>
+</Description>
+</Member>
+<Member Name="Req_StartTarget" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7803" BitNumber="7" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: run the terminal target logic (held while loading)]]>
+</Description>
+</Member>
+<Member Name="ZZZZZZZZZZIND7804" DataType="SINT" Dimension="0" Radix="Decimal" Hidden="true" ExternalAccess="Read/Write"/>
+<Member Name="Req_AbortTarget" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="0" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Request: abort the terminal target logic - this is the controlled stop]]>
+</Description>
+</Member>
+<Member Name="Req_SelGross" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="1" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Readback selector: return gross weight]]>
+</Description>
+</Member>
+<Member Name="Req_SelNet" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="2" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Readback selector: return net weight]]>
+</Description>
+</Member>
+<Member Name="Req_SelTare" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="3" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Readback selector: return tare weight]]>
+</Description>
+</Member>
+<Member Name="Req_SelTarget" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="4" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Readback selector: return target value]]>
+</Description>
+</Member>
+<Member Name="Tare_Confirmed" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="5" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Tare readback matched - the terminal holds the tare the PLC believes it holds]]>
+</Description>
+</Member>
+<Member Name="Target_Confirmed" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="6" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Target readback matched - the terminal holds the commanded target]]>
+</Description>
+</Member>
+<Member Name="Batch_Running" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7804" BitNumber="7" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Terminal target logic is running (Req_StartTarget held and feed seen)]]>
+</Description>
+</Member>
+<Member Name="ZZZZZZZZZZIND7805" DataType="SINT" Dimension="0" Radix="Decimal" Hidden="true" ExternalAccess="Read/Write"/>
+<Member Name="Batch_Done" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="0" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Derived batch complete - feed fell after feeding, in tolerance, stable, no motion]]>
+</Description>
+</Member>
+<Member Name="Batch_InTol" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="1" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Batch completed within tolerance]]>
+</Description>
+</Member>
+<Member Name="Batch_Fault" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="2" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Batch ended abnormally - aborted, out of tolerance, or terminal lost mid-batch]]>
+</Description>
+</Member>
+<Member Name="Feed_Prev" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="3" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Previous-scan Feed memory for the falling-edge that defines batch completion]]>
+</Description>
+</Member>
+<Member Name="Fed_Once" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="4" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Feed has been seen at least once this batch - completion is meaningless without it]]>
+</Description>
+</Member>
+<Member Name="Seq_Busy" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="5" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Command sequencer is mid-handshake and will not accept a new request]]>
+</Description>
+</Member>
+<Member Name="Sts_Simulated" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="6" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Diagnostic: this card is being simulated rather than read from a terminal]]>
+</Description>
+</Member>
+<Member Name="Cfg_Enabled" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZIND7805" BitNumber="7" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Card enabled - clear to take a terminal out of service without deleting config]]>
+</Description>
+</Member>
+<Member Name="Status_Raw" DataType="INT" Dimension="0" Radix="Binary" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Raw terminal status word as received (all 16 bits also broken out above)]]>
+</Description>
+</Member>
+<Member Name="Weight_Raw" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Raw terminal weight word as received - divisions or display units]]>
+</Description>
+</Member>
+<Member Name="Cmd_Word_Out" DataType="INT" Dimension="0" Radix="Binary" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Command word written to the terminal this scan]]>
+</Description>
+</Member>
+<Member Name="Weight_Out" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Data word written to the terminal - target or preset tare, in the same units as Weight_Raw]]>
+</Description>
+</Member>
+<Member Name="Cfg_Increment" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Division size in lbs. Weight_PV = Weight_Raw * Cfg_Increment. Must match the terminal calibration - it is NOT read from the terminal]]>
+</Description>
+</Member>
+<Member Name="Cfg_Mode" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[0=monitor only (PLC reads weight, PLC does its own cutoff)  1=PLC-driven terminal batch (terminal runs the cutoff)]]>
+</Description>
+</Member>
+<Member Name="Cfg_TolWindow" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Readback compare window in lbs. A readback within this of the commanded value counts as confirmed [default 1.0]]]>
+</Description>
+</Member>
+<Member Name="Cfg_AckTimeout" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Scans to wait for a command readback before declaring Seq_ErrCode 1 [default 100]]]>
+</Description>
+</Member>
+<Member Name="Weight_PV" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Scaled weight in lbs, valid only while Comm_OK and DataOk and not UpdateInProgress]]>
+</Description>
+</Member>
+<Member Name="Readback_PV" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Scaled value most recently returned for the active readback selector]]>
+</Description>
+</Member>
+<Member Name="Target_SP" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Target the PLC intends the terminal to hold, in lbs]]>
+</Description>
+</Member>
+<Member Name="Tare_PV" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Tare the terminal reported and the PLC confirmed, in lbs - this is the custody tare]]>
+</Description>
+</Member>
+<Member Name="Seq_State" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[0=IDLE 1=WRITE 2=WAIT_COHERENT 3=READBACK 4=CONFIRMED 5=TIMEOUT]]>
+</Description>
+</Member>
+<Member Name="Seq_Timer" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Scans in the current sequencer state]]>
+</Description>
+</Member>
+<Member Name="Seq_ErrCode" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[0=None 1=ReadbackTimeout 2=ReadbackMismatch 3=TerminalLost 4=NetModeUnexpected]]>
+</Description>
+</Member>
+<Member Name="Stable_Timer" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Scans the terminal has been out of motion with feed off - gates Batch_Done]]>
+</Description>
+</Member>
+<Member Name="Batch_StartWt" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Weight_PV captured when the batch started, for delivered-amount cross-check]]>
+</Description>
+</Member>
+<Member Name="LastUpdate" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Seconds-since-1970 of the last coherent reading]]>
+</Description>
+</Member>
+<Member Name="Status" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[0=OK 1=Warn 2=Alarm 3=Fault]]>
+</Description>
+</Member>
+<Member Name="Quality" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[0=Good 1=Uncertain 2=Bad]]>
+</Description>
+</Member>
+</Members>
+</DataType>
+</DataTypes>
+</Controller>
+</RSLogix5000Content>

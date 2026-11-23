@@ -1,0 +1,17 @@
+remark,Company = KJV Solutions LLC
+remark,Project = CTM_CPX
+remark,New tags required for IND780 terminal batching. Scope column says where each belongs.
+scope,name,datatype,dimensions,radix,description
+Controller,IND780s,IND780,6,,"Six IND780 EtherNet/IP terminals. Index = card number - 1."
+Controller,Cfg_BayScaleMode,DINT,10,Decimal,"Per bay: 0 = PLC monitors weight and runs its own cutoff (existing behaviour); 1 = IND780 runs the cutoff and the PLC commands it"
+Controller,CardEntryStatus,INT,6,Hex,"GSV MODULE EntryStatus per card. Bits 12-15 = 16#4000 means connected and running"
+Controller,WallClockSeconds,DINT,,Decimal,"Seconds since 1970 - existing project time source if one already exists, otherwise add"
+PRG_IND780,CardIdx,DINT,,Decimal,"Card loop index 0-5"
+PRG_IND780,SelBit1,BOOL,6,Decimal,"Decoded readback selector bit 0 per card"
+PRG_IND780,SelBit2,BOOL,6,Decimal,"Decoded readback selector bit 1 per card"
+PRG_IND780,SelBit3,BOOL,6,Decimal,"Decoded readback selector bit 2 per card"
+PRG_IND780,SeqExpected,REAL,6,Float,"Value the sequencer expects the readback to return, lbs"
+PRG_IND780,SeqDelta,REAL,6,Float,"Absolute difference between readback and expected, lbs"
+PRG_IND780,SrcCard,DINT,,Decimal,"Card index serving the bay under evaluation; -1 = none"
+PRG_BayControl,BayCard,DINT,10,Decimal,"Card index serving each bay; -1 = none"
+PRG_BayControl,TermBatch,BOOL,,Decimal,"This bay is on a terminal that runs its own cutoff this scan"
